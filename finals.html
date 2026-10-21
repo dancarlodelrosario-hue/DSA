@@ -1,6 +1,14 @@
 <!--
 # Changelog
 
+## [0.8.0] - 2026-10-20
+### Added
+- Topic 5 (Binary Search Trees & Node Mutation) Python code: Plant Registry BST keyed by plot position with insert, search, delete (leaf, one child, two children via inorder successor), inorder and height
+- Plant Registry panel on the Interactive Sanctuary tab with Search and Uproot buttons (showBstPanel bridge)
+- Uprooting clears the plot and refunds half the seed cost
+### Changed
+- Topic 5 wraps on_tile_click so planting also inserts into the registry
+
 ## [0.7.0] - 2026-09-21
 ### Added
 - Topic 4 is now a garden zones tree (Sanctuary > zones > plots) that drives gameplay: Water uses a preorder walk, Harvest uses a postorder walk that adds up coins bottom-up
@@ -197,6 +205,26 @@
                     <div id="zone-last" class="mt-4 text-xs space-y-1"></div>
                     <div id="zone-levels" class="mt-3 text-xs text-emerald-300/80 space-y-1 code-font"></div>
                 </div>
+
+                <!-- Plant Registry BST (Topic 5). Hidden until Python calls showBstPanel(...) -->
+                <div id="bst-panel" class="hidden mt-6 pt-5 border-t border-emerald-800/40">
+                    <div class="flex items-center justify-between mb-3">
+                        <h3 class="font-bold text-emerald-300 flex items-center gap-2">
+                            <i data-lucide="network" class="w-4 h-4"></i> Plant Registry (BST)
+                        </h3>
+                        <span class="text-[10px] uppercase tracking-widest text-emerald-400/80">Topic 5</span>
+                    </div>
+                    <div class="flex items-center gap-2 mb-3">
+                        <input id="bst-key" type="number" min="0" max="24" placeholder="Plot 0-24"
+                               class="w-28 bg-[#1b2219] border border-emerald-700 text-emerald-100 text-sm rounded-xl px-3 py-2">
+                        <button onclick="onBstAction('search')" class="px-3 py-2 rounded-lg text-xs font-bold bg-[#2a3825] hover:bg-[#34462e] border border-emerald-800 text-emerald-100">🔍 Search</button>
+                        <button onclick="onBstAction('uproot')" class="px-3 py-2 rounded-lg text-xs font-bold bg-[#2a3825] hover:bg-[#34462e] border border-emerald-800 text-emerald-100">🪓 Uproot</button>
+                    </div>
+                    <div id="bst-stats" class="text-[11px] text-emerald-300/80 mb-2"></div>
+                    <pre id="bst-tree" class="code-font text-xs text-emerald-100 bg-[#0a0f0a] border border-emerald-900 rounded-xl p-3 overflow-auto max-h-56 whitespace-pre"></pre>
+                    <div id="bst-inorder" class="mt-2 text-xs text-emerald-300/80 code-font"></div>
+                    <div id="bst-last" class="mt-3 text-xs space-y-1"></div>
+                </div>
             </div>
             <div id="view-code" class="glass-panel rounded-2xl p-6 flex flex-col flex-grow hidden">
                 <h2 class="font-bold mb-3 flex items-center gap-2">
@@ -238,7 +266,7 @@
         // PATCH: bug fix or small tweak with no new feature
         // Use 0.x.y while in development; move to 1.0.0 once all 11 topics are complete.
         // =====================================================================
-        const APP_VERSION = "0.7.0";
+        const APP_VERSION = "0.8.0";
 
         let pyodideInstance = null;
         let gardenPlants = {};
@@ -795,7 +823,228 @@ print("Topic 4 ready! Plant some crops, then use the Water and Harvest buttons u
             5: {
                 title: "Binary Search Trees (BST) & Node Mutation",
                 code: `# Topic 5: Binary Search Trees (BST) & Node Mutation
-# ==== WRITE YOUR CODE HERE ====
+import json
+
+if "garden" not in globals():
+    raise RuntimeError("Run Topic 3 first: Topic 5 works on the garden grid that Topic 3 creates.")
+
+
+# ---- BST node: smaller keys go left, bigger keys go right ----
+class BSTNode:
+    def __init__(self, key, crop):
+        self.key = key        # plot position 0-24
+        self.crop = crop
+        self.left = None
+        self.right = None
+
+
+class PlantRegistry:
+    def __init__(self):
+        self.root = None
+        self.size = 0
+
+    def insert(self, key, crop):       # O(h)
+        self.root = self._insert(self.root, key, crop)
+
+    def _insert(self, node, key, crop):
+        if node is None:
+            self.size += 1
+            return BSTNode(key, crop)
+        if key < node.key:
+            node.left = self._insert(node.left, key, crop)
+        elif key > node.key:
+            node.right = self._insert(node.right, key, crop)
+        else:
+            node.crop = crop
+        return node
+
+    def search(self, key):             # O(h): returns (node, path of keys visited)
+        node = self.root
+        path = []
+        while node is not None:
+            path.append(node.key)
+            if key == node.key:
+                return node, path
+            node = node.left if key < node.key else node.right
+        return None, path
+
+    def delete(self, key):             # O(h)
+        if self.search(key)[0] is None:
+            return False
+        self.root = self._delete(self.root, key)
+        self.size -= 1
+        return True
+
+    def _delete(self, node, key):
+        if node is None:
+            return None
+        if key < node.key:
+            node.left = self._delete(node.left, key)
+        elif key > node.key:
+            node.right = self._delete(node.right, key)
+        else:
+            # Case 1 and 2: no child or one child, the child takes this node's place
+            if node.left is None:
+                return node.right
+            if node.right is None:
+                return node.left
+            # Case 3: two children, copy the inorder successor (smallest key on the right)
+            successor = node.right
+            while successor.left is not None:
+                successor = successor.left
+            node.key = successor.key
+            node.crop = successor.crop
+            node.right = self._delete(node.right, successor.key)
+        return node
+
+    def inorder(self, node, result):   # left, node, right: keys come out sorted
+        if node is not None:
+            self.inorder(node.left, result)
+            result.append(node)
+            self.inorder(node.right, result)
+        return result
+
+    def height(self, node):
+        if node is None:
+            return -1
+        return 1 + max(self.height(node.left), self.height(node.right))
+
+
+registry = PlantRegistry()
+
+
+# ---- Fill the registry from the plants already on the grid ----
+# Inserting sorted keys one by one would make a straight line (height = n),
+# so we insert the middle key first to keep the tree balanced.
+def build_balanced(pairs):
+    if not pairs:
+        return
+    mid = len(pairs) // 2
+    registry.insert(pairs[mid][0], pairs[mid][1])
+    build_balanced(pairs[:mid])
+    build_balanced(pairs[mid + 1:])
+
+
+existing = []
+for pos in range(ROWS * COLS):
+    r, c = divmod(pos, COLS)
+    if garden.cells[r][c] is not None:
+        existing.append((pos, garden.cells[r][c]))
+build_balanced(existing)
+
+
+# ---- Keep the registry matching the grid (Topic 4 harvests remove plants) ----
+def sync_registry():
+    for node in registry.inorder(registry.root, []):
+        r, c = divmod(node.key, COLS)
+        if garden.cells[r][c] is None:
+            registry.delete(node.key)
+    for pos in range(ROWS * COLS):
+        r, c = divmod(pos, COLS)
+        if garden.cells[r][c] is not None and registry.search(pos)[0] is None:
+            registry.insert(pos, garden.cells[r][c])
+
+
+# ---- Planting also inserts into the registry ----
+if not getattr(on_tile_click, "is_bst_wrapper", False):
+    _base_tile_click = on_tile_click
+
+
+def on_tile_click(pos, crop):
+    pos = int(pos)
+    row, col = divmod(pos, COLS)
+    before = garden.cells[row][col]
+    _base_tile_click(pos, crop)
+    after = garden.cells[row][col]
+    if before is None and after is not None:
+        registry.insert(pos, after)
+        print(f"Inserted key {pos} into the registry, size {registry.size}, height {registry.height(registry.root)}")
+        send_bst_panel()
+
+
+on_tile_click.is_bst_wrapper = True
+
+
+# ---- Panel: sideways tree (right subtree on top, root on the left) ----
+last_bst = {}
+
+
+def tree_lines(node, depth, out):
+    if node is None:
+        return out
+    tree_lines(node.right, depth + 1, out)
+    out.append("      " * depth + f"{node.key} {CROP_EMOJIS[node.crop]}")
+    tree_lines(node.left, depth + 1, out)
+    return out
+
+
+def send_bst_panel():
+    sync_registry()
+    nodes = registry.inorder(registry.root, [])
+    panel = {
+        "size": registry.size,
+        "height": registry.height(registry.root),
+        "inorder": [node.key for node in nodes],
+        "lines": tree_lines(registry.root, 0, []),
+        "last": last_bst,
+    }
+    showBstPanel(json.dumps(panel))
+
+
+# ---- What the buttons do ----
+def on_bst_action(action, value):
+    sync_registry()
+    try:
+        key = int(value)
+    except (TypeError, ValueError):
+        showToast("Enter a plot number from 0 to 24")
+        return
+    if key < 0 or key >= ROWS * COLS:
+        showToast("Plot numbers go from 0 to 24")
+        return
+
+    node, path = registry.search(key)
+    path_text = " → ".join(str(k) for k in path) if path else "(empty tree)"
+
+    if action == "search":
+        title = f"Search plot {key}"
+        if node is None:
+            result = f"Not found after {len(path)} steps: nothing planted at plot {key}"
+        else:
+            result = f"Found {node.crop} at plot {key} in {len(path)} steps"
+    elif action == "uproot":
+        title = f"Uproot plot {key}"
+        if node is None:
+            result = f"Nothing to uproot: plot {key} is empty"
+        else:
+            crop = node.crop
+            kids = (node.left is not None) + (node.right is not None)
+            case = ["leaf: removed directly", "one child: the child takes its place", "two children: replaced by the inorder successor"][kids]
+            registry.delete(key)
+            row, col = divmod(key, COLS)
+            garden.cells[row][col] = None
+            garden.watered[row][col] = False
+            clearPlot(key)
+            refund = CROP_COSTS[crop] // 2
+            resources["coins"] += refund
+            refresh_resources()
+            pushAction(f"Uprooted {crop} at plot {key}")
+            result = f"Uprooted {crop} ({case}). Refunded {refund} coins"
+    else:
+        return
+
+    last_bst.update({"title": title, "path": path_text, "result": result})
+    print(f"{title}: {result}")
+    print(f"Path: {path_text}")
+    showToast(result)
+    send_bst_panel()
+
+
+sync_registry()
+print(f"Registry: {registry.size} plants, height {registry.height(registry.root)}")
+print("Inorder keys:", [node.key for node in registry.inorder(registry.root, [])])
+send_bst_panel()
+print("Topic 5 ready! Plant some crops, then Search or Uproot a plot number under the grid.")
 `
             },
             6: {
@@ -885,6 +1134,7 @@ print("Resource Storage and Seed Bank ready!")
                 pyodideInstance.globals.set("clearPlot", clearPlot);
                 pyodideInstance.globals.set("setPlotWatered", setPlotWatered);
                 pyodideInstance.globals.set("showZonePanel", showZonePanel);
+                pyodideInstance.globals.set("showBstPanel", showBstPanel);
                 await pyodideInstance.runPythonAsync(`
                     import sys
                     from js import document
@@ -1078,6 +1328,48 @@ print("Resource Storage and Seed Bank ready!")
             }
         }
         // ---- end garden zones panel ----
+
+        // ---- Plant Registry BST panel (Topic 5) ----
+        // showBstPanel(json: str)
+        // Display only. Python owns the BST and sends: {size, height, inorder: [int], lines: [str], last: {title, path, result}}
+        function showBstPanel(json) {
+            const data = JSON.parse(json);
+            document.getElementById("bst-panel").classList.remove("hidden");
+            document.getElementById("bst-stats").textContent = `${data.size} plants · height ${data.height}`;
+            document.getElementById("bst-tree").textContent = (data.lines && data.lines.length) ? data.lines.join("\n") : "(empty tree)";
+            document.getElementById("bst-inorder").textContent = "Inorder: " + ((data.inorder && data.inorder.length) ? data.inorder.join(" → ") : "-");
+
+            const last = document.getElementById("bst-last");
+            last.innerHTML = "";
+            if (data.last && data.last.title) {
+                [["font-bold text-amber-300", data.last.title],
+                 ["code-font text-emerald-200/90", "Path: " + data.last.path],
+                 ["text-emerald-100", data.last.result]].forEach(([cls, text]) => {
+                    const d = document.createElement("div");
+                    d.className = cls;
+                    d.textContent = text;
+                    last.appendChild(d);
+                });
+            }
+        }
+
+        // Hands a registry button click to Python. Needs on_bst_action(action, value) from Topic 5.
+        function onBstAction(action) {
+            if (!pyodideInstance) { showToast("Python is still loading."); return; }
+            const handler = pyodideInstance.globals.get("on_bst_action");
+            if (!handler) { showToast("Run Topic 5 first so Python can handle registry actions."); return; }
+            const value = document.getElementById("bst-key").value;
+            try {
+                handler(action, value);
+            } catch (err) {
+                showToast("Python error: see the Student Code Editor console.");
+                const consoleEl = document.getElementById("output-console");
+                if (consoleEl) consoleEl.innerHTML += `<span class="text-red-400">Error: ${err.message}</span><br>`;
+            } finally {
+                handler.destroy();
+            }
+        }
+        // ---- end Plant Registry BST panel ----
 
         // updateResources(water, seeds, energy, hope, coins)
         // Or pass a single object: updateResources({"water": n, "seeds": n, ...})
