@@ -1,0 +1,2387 @@
+<!--
+# Changelog
+
+## [0.11.0] - 2026-10-22
+### Added
+- Weather system (Topic 2): the FIFO climate queue now drives a daily forecast. Next Day dequeues the next weather, refills the queue so three days are always forecast, and applies that weather's effects
+- weather_modifier(kind): a function that returns a multiplier for "water" or "harvest" based on the current weather (Sunny, Heavy Rain, Heat, Winter)
+- Day counter works: Python advances it on every Next Day (setDay bridge) with a Day banner
+- Today card in the Weather Forecast panel (setWeather bridge); the farm scene reacts with rain, snow, heat glow and sunshine
+- Next Day button (calls on_next_day in Python)
+### Changed
+- Topic 4 watering costs and harvest pay scale with today's weather when Topic 2 has been run (no Topic 2 run means x1.0)
+- Weather panel placeholder text when no forecast exists yet
+
+## [0.10.0] - 2026-10-22
+### Changed
+- Layout reorganized so every topic has a fixed home: Farm Zones (Topic 4) and Plant Registry (Topic 5) moved from under the field into the left column; Weather (Topic 2) and Journal (Topic 1) stay in the right column; the field and Farm Storage serve Topics 3 and 12
+- Student Code Editor is no longer a separate tab: the Barn Lab (topic selector, code, Run button, console) now sits under the field in the center, beside the panels it feeds
+- Topic selector is grouped by what each topic shows (Stacks & Queues, Field & Resources, Trees, Hashing & Graphs, Sorting & Searching, Strategy & DP)
+- Selecting or running a topic shows "Output appears in..." and makes the matching panel glow
+- Zones and Registry panels are always visible with a "Run Topic N" placeholder until their Python runs
+### Removed
+- Interactive Sanctuary / Student Code Editor tabs (switchTab)
+### Notes
+- No bridge function names or signatures changed; only three printed hint strings in Python were reworded
+
+## [0.9.0] - 2026-10-22
+### Changed
+- Complete visual redesign to a farm theme ("Harvest Hollow"): wooden signs, parchment panels, tilled soil plots, barn, windmill and hills
+- Animated scene: drifting clouds, rotating sun, spinning windmill, flying birds, butterflies, walking cow, sheep and tractor, swaying crops
+- Animated feedback: planting pop and dirt burst, rain on watering, harvest burst, floating coin gains and losses, wooden toast signs, shimmering resource bars
+- Tab "Interactive Sanctuary" is now "Farm Field"; Cactus is now Corn (same cost, same water need, same harvest value)
+- Garden grid now keeps its tiles between updates instead of rebuilding them, so animations only play where something changed
+### Notes
+- No bridge function names or signatures changed and the game rules in Python are untouched
+
+## [0.8.0] - 2026-10-20
+### Added
+- Topic 5 (Binary Search Trees & Node Mutation) Python code: Plant Registry BST keyed by plot position with insert, search, delete (leaf, one child, two children via inorder successor), inorder and height
+- Plant Registry panel on the Interactive Sanctuary tab with Search and Uproot buttons (showBstPanel bridge)
+- Uprooting clears the plot and refunds half the seed cost
+### Changed
+- Topic 5 wraps on_tile_click so planting also inserts into the registry
+
+## [0.7.0] - 2026-09-21
+### Added
+- Topic 4 is now a garden zones tree (Sanctuary > zones > plots) that drives gameplay: Water uses a preorder walk, Harvest uses a postorder walk that adds up coins bottom-up
+- Watering costs water (Cactus 2 L, Potato 8 L, Tomato 6 L); only watered plants can be harvested; harvesting pays coins (Cactus 160, Potato 40, Tomato 80) and clears the plot
+- Garden Zones panel on the Interactive Sanctuary tab with Water and Harvest buttons per zone and for the whole sanctuary
+- Water drop on watered tiles; clearPlot, setPlotWatered and showZonePanel bridges
+- Topic 3 GardenGrid gets a second 2D list (watered) plus water() and harvest() methods
+### Removed
+- Seed Catalog Tree panel (showCatalogTree) from 0.6.0, replaced by the zones tree
+
+## [0.6.0] - 2026-09-21
+### Added
+- Seed Catalog Tree panel on the Interactive Sanctuary tab (showCatalogTree bridge): draws the Topic 4 tree and numbers the nodes in preorder, level-order or postorder
+### Changed
+- Topic 4 traversals now return lists that Python prints in the console and sends to the panel
+
+## [0.5.0] - 2026-09-21
+### Added
+- Topic 4 (Hierarchical Trees & Traversals) Python code: seed catalog tree with preorder, level-order, postorder, leaf collection, height and path; Seed Bag is filled from the tree's leaves; inorder demo on a small binary tree
+
+## [0.4.1] - 2026-09-21
+### Changed
+- Starting coins raised from 999 to 2500 (Topic 3 and Topic 12)
+
+## [0.4.0] - 2026-09-21
+### Added
+- Planting now costs coins (Cactus 100, Potato 25, Tomato 50); Python checks the balance, deducts the cost and updates the Resource Storage panel
+- Planting is refused with a toast when there are not enough coins
+- clearGarden bridge so re-running Topic 3 resets the grid on screen
+### Changed
+- Topic 12 now keeps its starting resources in the same Python `resources` dict that Topic 3 uses
+
+## [0.3.2] - 2026-09-21
+### Changed
+- Topic 3 no longer plants anything automatically; the grid starts empty and plants only when a tile is clicked
+
+## [0.3.1] - 2026-09-21
+### Fixed
+- Planted tiles now show the emoji of the crop that was planted (cactus, potato, tomato) instead of a generic seedling
+
+## [0.3.0] - 2026-09-21
+### Added
+- Topic 3 (Static/Dynamic Arrays, 2D Lists, & Memory Structures) Python code
+- Click-to-plant: clicking a grid tile calls on_tile_click() in Python
+- showToast bridge so Python can show messages on the Sanctuary tab
+### Fixed
+- Console dropped the newlines that print() writes
+- Topic 12 code (indentation, missing commas, bridge function name)
+
+## [0.2.0] - 2026-09-21
+### Added
+- Topic 1 (Action History Stack) and Topic 2 (Climate Queue) Python code
+### Changed
+- Student Code Editor is read-only; code is edited only in index.html
+### Removed
+- localStorage saving, so the editor always shows the code that is in index.html
+
+## [0.1.0] - 2026-09-21
+### Removed
+- Temporary unlock system (locked/unlocked classes, unlockFeature())
+- JS-side game logic and unused functions
+### Changed
+- Editor reorganized into 11 topic templates for hard-coded Python
+### Added
+- Semantic versioning (APP_VERSION constant and UI badge)
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Harvest Hollow - Python Farm Simulator</title>
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.26.1/full/pyodide.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+        :root {
+            --wood: #a06f3b;
+            --wood-light: #c58f52;
+            --wood-dark: #5b3819;
+            --parch: #f8e9c6;
+            --parch-dark: #efd7a0;
+            --ink: #4a2c12;
+            --grass: #63b84a;
+            --grass-dark: #3f8a2f;
+            --sky-top: #6ec3ef;
+            --sky-bottom: #dff4ff;
+        }
+        * { box-sizing: border-box; }
+        html, body { margin: 0; }
+        body {
+            font-family: 'Fredoka', sans-serif;
+            color: var(--ink);
+            min-height: 100vh;
+            background: var(--sky-top);
+            overflow-x: hidden;
+        }
+        .code-font { font-family: 'JetBrains Mono', monospace; }
+
+        /* ============================================================
+           ANIMATED FARM SCENE (fixed background)
+           ============================================================ */
+        #scene {
+            position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none;
+            background: linear-gradient(180deg, var(--sky-top) 0%, #a5dcf7 45%, var(--sky-bottom) 70%, #f4fbe8 100%);
+        }
+        .sun { position: absolute; top: 46px; right: 6%; width: 96px; height: 96px; }
+        .sun-core {
+            position: absolute; inset: 0; border-radius: 50%;
+            background: radial-gradient(circle at 40% 35%, #fffbc4, #ffd43b 70%);
+            box-shadow: 0 0 60px 24px rgba(255, 223, 90, .55);
+            animation: sunpulse 4s ease-in-out infinite;
+        }
+        .sun-rays {
+            position: absolute; inset: -70px; border-radius: 50%;
+            background: repeating-conic-gradient(from 0deg, rgba(255, 236, 120, .6) 0 7deg, transparent 7deg 22deg);
+            -webkit-mask-image: radial-gradient(circle, transparent 28%, #000 40%, transparent 70%);
+            mask-image: radial-gradient(circle, transparent 28%, #000 40%, transparent 70%);
+            animation: spin 50s linear infinite;
+        }
+        @keyframes sunpulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.07); } }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .cloud {
+            position: absolute; left: -320px; background: #fff; border-radius: 60px; opacity: .92;
+            filter: drop-shadow(0 6px 6px rgba(80, 130, 170, .18));
+            animation: drift linear infinite;
+        }
+        .cloud::before, .cloud::after { content: ""; position: absolute; background: #fff; border-radius: 50%; }
+        .cloud::before { width: 46%; height: 150%; top: -70%; left: 14%; }
+        .cloud::after { width: 34%; height: 120%; top: -45%; right: 14%; }
+        .c1 { top: 70px;  width: 170px; height: 44px; animation-duration: 70s; }
+        .c2 { top: 150px; width: 120px; height: 32px; animation-duration: 95s; animation-delay: -30s; opacity: .8; }
+        .c3 { top: 36px;  width: 210px; height: 52px; animation-duration: 120s; animation-delay: -70s; }
+        .c4 { top: 210px; width: 100px; height: 28px; animation-duration: 80s; animation-delay: -50s; opacity: .7; }
+        @keyframes drift { from { transform: translateX(0); } to { transform: translateX(calc(100vw + 700px)); } }
+
+        .bird {
+            position: absolute; left: -60px; font-size: 22px; animation: fly linear infinite;
+        }
+        .b1 { top: 120px; animation-duration: 26s; }
+        .b2 { top: 170px; animation-duration: 34s; animation-delay: -12s; font-size: 17px; }
+        .b3 { top: 95px;  animation-duration: 40s; animation-delay: -25s; font-size: 15px; }
+        @keyframes fly {
+            0%   { transform: translate(0, 0); }
+            25%  { transform: translate(28vw, -22px); }
+            50%  { transform: translate(55vw, 10px); }
+            75%  { transform: translate(82vw, -18px); }
+            100% { transform: translate(calc(100vw + 80px), 0); }
+        }
+
+        .hills { position: absolute; left: 0; bottom: 0; width: 100%; height: 46vh; }
+        .scene-item { position: absolute; }
+        .barn { left: 3%; bottom: 17vh; width: 170px; }
+        .windmill { left: 74%; bottom: 20vh; width: 120px; }
+        .blades { transform-origin: 60px 52px; animation: spin 7s linear infinite; }
+        .tree { font-size: 74px; bottom: 21vh; transform-origin: bottom center; animation: treesway 6s ease-in-out infinite; }
+        .tree.t1 { left: 22%; }
+        .tree.t2 { left: 89%; font-size: 90px; animation-delay: -2s; }
+        .tree.t3 { left: 60%; font-size: 56px; bottom: 23vh; animation-delay: -4s; }
+        @keyframes treesway { 0%, 100% { transform: rotate(-1.5deg); } 50% { transform: rotate(1.5deg); } }
+
+        .walker { position: absolute; right: -120px; animation: walk linear infinite; }
+        .w-cow    { bottom: 8vh;  font-size: 44px; animation-duration: 75s; }
+        .w-sheep  { bottom: 11vh; font-size: 34px; animation-duration: 95s; animation-delay: -40s; }
+        .w-tractor{ bottom: 4vh;  font-size: 52px; animation-duration: 55s; animation-delay: -20s; }
+        .walker span { display: inline-block; animation: bob .7s ease-in-out infinite; }
+        .w-tractor span { animation-duration: .3s; }
+        @keyframes walk { from { transform: translateX(0); } to { transform: translateX(calc(-100vw - 240px)); } }
+        @keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+
+        .butterfly { position: absolute; font-size: 20px; animation: flutter ease-in-out infinite; }
+        .bf1 { left: 12%; bottom: 14vh; animation-duration: 11s; }
+        .bf2 { left: 68%; bottom: 18vh; animation-duration: 14s; animation-delay: -5s; }
+        @keyframes flutter {
+            0%   { transform: translate(0, 0) rotate(0deg); }
+            20%  { transform: translate(60px, -40px) rotate(12deg); }
+            40%  { transform: translate(110px, 10px) rotate(-8deg); }
+            60%  { transform: translate(40px, -60px) rotate(10deg); }
+            80%  { transform: translate(-30px, -20px) rotate(-12deg); }
+            100% { transform: translate(0, 0) rotate(0deg); }
+        }
+
+        .fence {
+            position: absolute; left: 0; right: 0; bottom: 0; height: 54px;
+            background: repeating-linear-gradient(90deg, #c99558 0 16px, transparent 16px 42px);
+            -webkit-mask-image: linear-gradient(#000, #000);
+        }
+        .fence::before {
+            content: ""; position: absolute; left: 0; right: 0; top: 14px; height: 9px;
+            background: linear-gradient(#dba96a, #a97339); box-shadow: 0 20px 0 #b8824a; border-radius: 5px;
+        }
+        .grass-tufts {
+            position: absolute; left: 0; right: 0; bottom: 0; height: 26px;
+            background: repeating-linear-gradient(90deg, transparent 0 18px, #3f8a2f 18px 20px, transparent 20px 31px);
+            transform-origin: bottom; animation: grasssway 3s ease-in-out infinite;
+            opacity: .85;
+        }
+        @keyframes grasssway { 0%, 100% { transform: skewX(-3deg); } 50% { transform: skewX(3deg); } }
+
+        /* ============================================================
+           PAGE LAYOUT
+           ============================================================ */
+        #app { position: relative; z-index: 1; min-height: 100vh; padding: 14px 16px 70px; display: flex; flex-direction: column; }
+        .wrap { width: 100%; max-width: 1280px; margin: 0 auto; }
+
+        header.wrap { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 14px; margin-bottom: 16px; }
+        .sign-wrap { position: relative; padding-top: 18px; transform-origin: 50% 0; animation: signsway 6s ease-in-out infinite; }
+        @keyframes signsway { 0%, 100% { transform: rotate(-0.7deg); } 50% { transform: rotate(0.7deg); } }
+        .sign-wrap::before, .sign-wrap::after {
+            content: ""; position: absolute; top: 0; width: 4px; height: 24px; background: #6f6f6f; border-radius: 2px;
+        }
+        .sign-wrap::before { left: 26px; } .sign-wrap::after { right: 26px; }
+        .sign {
+            background:
+                repeating-linear-gradient(180deg, rgba(0,0,0,.07) 0 2px, transparent 2px 22px),
+                linear-gradient(180deg, var(--wood-light), var(--wood));
+            border: 4px solid var(--wood-dark); border-radius: 14px; padding: 10px 24px 12px;
+            box-shadow: 0 8px 0 rgba(60, 30, 0, .35), 0 14px 24px rgba(60, 30, 0, .3);
+        }
+        .sign h1 {
+            margin: 0; font-size: clamp(22px, 3.2vw, 34px); font-weight: 700; color: #fff3d1;
+            text-shadow: 0 3px 0 var(--wood-dark), 0 5px 8px rgba(0,0,0,.3); letter-spacing: .5px;
+            display: flex; align-items: center; gap: 10px;
+        }
+        .sign h1 .wiggle { display: inline-block; animation: wiggle 2.5s ease-in-out infinite; transform-origin: bottom; }
+        .sign h1 .wiggle.two { animation-delay: -1.2s; }
+        @keyframes wiggle { 0%, 100% { transform: rotate(-8deg); } 50% { transform: rotate(8deg); } }
+        .sign p { margin: 2px 0 0; font-size: 12px; font-weight: 500; color: #ffe9b8; letter-spacing: 1px; }
+        #version-badge {
+            font-size: 11px; font-weight: 700; color: var(--wood-dark); background: #ffe28a; border: 2px solid var(--wood-dark);
+            padding: 1px 9px; border-radius: 999px; letter-spacing: 1px; text-shadow: none;
+        }
+
+        .tags { display: flex; gap: 12px; padding-top: 10px; }
+        .tag {
+            position: relative; min-width: 96px; padding: 8px 18px 8px 26px; text-align: right;
+            background: linear-gradient(180deg, #fdf0cc, #f0d99b); color: var(--ink);
+            clip-path: polygon(16px 0, 100% 0, 100% 100%, 16px 100%, 0 50%);
+            border-radius: 6px; box-shadow: 0 4px 10px rgba(60,30,0,.3);
+            filter: drop-shadow(0 4px 0 rgba(91, 56, 25, .55));
+        }
+        .tag::before { content: ""; position: absolute; left: 8px; top: 50%; width: 8px; height: 8px; margin-top: -4px; border-radius: 50%; background: var(--wood-dark); }
+        .tag small { display: block; font-size: 10px; letter-spacing: 2px; font-weight: 700; color: #8a5a28; }
+        .tag b { font-size: 24px; font-weight: 700; line-height: 1; display: inline-block; }
+        .tag b.bump { animation: bump .45s ease; }
+        @keyframes bump { 40% { transform: scale(1.35); } }
+
+        main.wrap { display: grid; grid-template-columns: 1fr; gap: 16px; flex: 1; }
+        @media (min-width: 1024px) { main.wrap { grid-template-columns: 3.4fr 5.4fr 3.4fr; } }
+        .col { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+
+        .panel {
+            position: relative; padding: 16px 16px 18px;
+            background: linear-gradient(180deg, rgba(251, 240, 205, .97), rgba(243, 223, 174, .97));
+            border: 5px solid var(--wood); border-radius: 20px;
+            box-shadow: 0 0 0 3px var(--wood-dark), 0 10px 0 -1px rgba(60, 30, 0, .3), 0 18px 30px rgba(60, 30, 0, .3);
+            animation: riseIn .7s cubic-bezier(.2, .9, .3, 1.2) both;
+        }
+        .panel::before, .panel::after {
+            content: ""; position: absolute; top: 7px; width: 8px; height: 8px; border-radius: 50%;
+            background: radial-gradient(circle at 35% 35%, #f3e2ae, #7a5a2a);
+        }
+        .panel::before { left: 9px; } .panel::after { right: 9px; }
+        @keyframes riseIn { from { opacity: 0; transform: translateY(26px) scale(.96); } to { opacity: 1; transform: none; } }
+        .col:nth-child(2) .panel { animation-delay: .12s; }
+        .col:nth-child(3) .panel { animation-delay: .24s; }
+
+        .panel-title {
+            margin: 0 0 12px; padding-bottom: 8px; font-size: 17px; font-weight: 700; color: var(--wood-dark);
+            display: flex; align-items: center; gap: 8px; border-bottom: 3px dashed rgba(160, 111, 59, .45);
+        }
+        .panel-title .ico { font-size: 20px; display: inline-block; animation: wiggle 3.4s ease-in-out infinite; }
+
+        /* ---------- Resource barn ---------- */
+        .res { margin-bottom: 14px; }
+        .res-head { display: flex; justify-content: space-between; align-items: center; font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+        .res-head .name { display: flex; align-items: center; gap: 6px; }
+        .res-head .em { font-size: 18px; display: inline-block; animation: bob 2.4s ease-in-out infinite; }
+        .bar {
+            height: 18px; border-radius: 12px; background: #6b4423; border: 3px solid var(--wood-dark);
+            box-shadow: inset 0 3px 5px rgba(0,0,0,.45); overflow: hidden; position: relative;
+        }
+        .fill {
+            height: 100%; width: 0%; border-radius: 10px; transition: width .7s cubic-bezier(.3, 1.2, .4, 1);
+            background-size: 28px 28px, 100% 100%;
+            animation: stripes 1.1s linear infinite;
+            position: relative;
+        }
+        .fill::after { content: ""; position: absolute; left: 6px; right: 6px; top: 2px; height: 4px; border-radius: 4px; background: rgba(255,255,255,.45); }
+        @keyframes stripes { to { background-position: 28px 0, 0 0; } }
+        .fill.water  { background-image: repeating-linear-gradient(45deg, rgba(255,255,255,.28) 0 7px, transparent 7px 14px), linear-gradient(180deg, #5ec8ff, #2a86d6); }
+        .fill.seeds  { background-image: repeating-linear-gradient(45deg, rgba(255,255,255,.28) 0 7px, transparent 7px 14px), linear-gradient(180deg, #a4e05a, #5aa52a); }
+        .fill.energy { background-image: repeating-linear-gradient(45deg, rgba(255,255,255,.3) 0 7px, transparent 7px 14px), linear-gradient(180deg, #ffe066, #f0a30a); }
+        .fill.hope   { background-image: repeating-linear-gradient(45deg, rgba(255,255,255,.28) 0 7px, transparent 7px 14px), linear-gradient(180deg, #ff9aa8, #e0405f); }
+        .coin-row {
+            display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; border-radius: 14px;
+            background: linear-gradient(180deg, #ffe9a0, #f5c542); border: 3px solid #a8741a; font-weight: 700;
+            box-shadow: inset 0 2px 0 rgba(255,255,255,.6), 0 4px 0 rgba(120, 80, 10, .35);
+        }
+        .coin-row .coin { display: inline-block; font-size: 24px; animation: coinspin 2.6s ease-in-out infinite; }
+        @keyframes coinspin { 0%, 100% { transform: rotateY(0deg); } 50% { transform: rotateY(180deg); } }
+        #coins-text { font-size: 18px; color: #6b4300; }
+        .shine { position: relative; overflow: hidden; }
+        .shine::after { content: ""; position: absolute; top: 0; bottom: 0; width: 40px; left: -60px; background: linear-gradient(90deg, transparent, rgba(255,255,255,.7), transparent); transform: skewX(-20deg); animation: shine 4s ease-in-out infinite; }
+        @keyframes shine { 0%, 60% { left: -60px; } 100% { left: 120%; } }
+
+        /* ---------- Tabs & buttons ---------- */
+        .tabs { display: flex; gap: 6px; width: fit-content; padding: 6px; border-radius: 16px; background: rgba(91, 56, 25, .85); box-shadow: 0 6px 14px rgba(40, 20, 0, .35); }
+        .tab {
+            font-family: inherit; font-size: 13px; font-weight: 700; padding: 8px 18px; border-radius: 11px; cursor: pointer;
+            border: 2px solid transparent; background: transparent; color: #f1d9a6; transition: all .2s;
+        }
+        .tab:hover { color: #fff; background: rgba(255,255,255,.1); }
+        .tab.active { background: linear-gradient(180deg, #7bc95a, #4a9a35); color: #fff; border-color: #2f6d22; box-shadow: 0 3px 0 #2f6d22; text-shadow: 0 1px 0 rgba(0,0,0,.3); }
+
+        .btn {
+            font-family: inherit; font-weight: 700; font-size: 12px; color: #fff; cursor: pointer;
+            padding: 7px 12px; border-radius: 11px; border: 2px solid var(--wood-dark);
+            background: linear-gradient(180deg, var(--wood-light), var(--wood));
+            box-shadow: 0 4px 0 var(--wood-dark); text-shadow: 0 1px 0 rgba(0,0,0,.35);
+            transition: transform .1s, box-shadow .1s, filter .15s;
+        }
+        .btn:hover { filter: brightness(1.1); transform: translateY(-1px); }
+        .btn:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--wood-dark); }
+        .btn.water   { background: linear-gradient(180deg, #6bc4f5, #2f8bd8); border-color: #1d5c96; box-shadow: 0 4px 0 #1d5c96; }
+        .btn.water:active { box-shadow: 0 1px 0 #1d5c96; }
+        .btn.harvest { background: linear-gradient(180deg, #ffbf55, #e4851a); border-color: #9a560c; box-shadow: 0 4px 0 #9a560c; }
+        .btn.harvest:active { box-shadow: 0 1px 0 #9a560c; }
+        .btn.go { background: linear-gradient(180deg, #7bd45a, #3f9a2a); border-color: #2a6a1c; box-shadow: 0 4px 0 #2a6a1c; font-size: 15px; padding: 12px; }
+        .btn.go:active { box-shadow: 0 1px 0 #2a6a1c; }
+        .btn.wide { width: 100%; }
+
+        select, input[type=number] {
+            font-family: inherit; font-weight: 600; font-size: 14px; color: var(--ink);
+            background: #fff8e2; border: 3px solid var(--wood); border-radius: 12px; padding: 8px 10px;
+            box-shadow: inset 0 2px 4px rgba(90, 56, 25, .2); outline: none;
+        }
+        select:focus, input:focus { border-color: #63b84a; }
+
+        /* ---------- Farm field ---------- */
+        .view-head { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+        .view-head h2 { margin: 0; font-size: 22px; color: var(--wood-dark); }
+        .view-head p { margin: 2px 0 0; font-size: 12px; font-weight: 500; color: #8a5a28; }
+        .pouch { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; }
+
+        .field {
+            position: relative; padding: 16px; border-radius: 18px;
+            background:
+                radial-gradient(circle at 20% 15%, rgba(255,255,255,.18), transparent 40%),
+                linear-gradient(180deg, #86d062, #5aa83f);
+            border: 5px solid #3f7a2d; box-shadow: inset 0 6px 14px rgba(20, 70, 10, .35), 0 6px 0 rgba(40, 90, 20, .35);
+        }
+        .field::before, .field::after { content: "🌼"; position: absolute; font-size: 16px; animation: wiggle 3s ease-in-out infinite; }
+        .field::before { top: 3px; left: 8px; }
+        .field::after { bottom: 3px; right: 10px; content: "🌷"; animation-delay: -1.4s; }
+        #garden-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 9px; }
+
+        .tile {
+            position: relative; aspect-ratio: 1; border-radius: 12px; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            font-size: clamp(28px, 4.2vw, 48px);
+            background:
+                radial-gradient(circle at 30% 25%, rgba(255,255,255,.12), transparent 45%),
+                repeating-linear-gradient(180deg, #92612f 0 9px, #7d5026 9px 13px);
+            border: 3px solid #5a3515; box-shadow: inset 0 -5px 0 rgba(0,0,0,.2), 0 4px 0 #4a2a10;
+            transition: transform .15s, filter .15s, background .6s;
+        }
+        .tile:hover { transform: translateY(-4px) scale(1.03); filter: brightness(1.12); }
+        .tile:active { transform: translateY(1px) scale(.97); }
+        .tile.wet {
+            background:
+                radial-gradient(circle at 30% 25%, rgba(255,255,255,.08), transparent 45%),
+                repeating-linear-gradient(180deg, #6a4322 0 9px, #593619 9px 13px);
+        }
+        .tile.empty::before { content: ""; position: absolute; width: 38%; height: 14%; bottom: 22%; border-radius: 50%; background: rgba(0,0,0,.18); }
+        .tile.empty:hover::after { content: attr(data-ghost); position: absolute; opacity: .45; animation: bob 1s ease-in-out infinite; }
+        .crop { display: inline-block; transform-origin: 50% 90%; filter: drop-shadow(0 4px 2px rgba(0,0,0,.35)); animation: sway 3.4s ease-in-out infinite; animation-delay: var(--d, 0s); }
+        .crop.pop { animation: pop .65s cubic-bezier(.2, 1.6, .4, 1), sway 3.4s ease-in-out .65s infinite; }
+        @keyframes sway { 0%, 100% { transform: rotate(-5deg); } 50% { transform: rotate(5deg); } }
+        @keyframes pop { 0% { transform: scale(0) translateY(14px); } 100% { transform: scale(1) translateY(0); } }
+        .drop { position: absolute; top: 2px; right: 5px; font-size: 15px; animation: dropbob 1.6s ease-in-out infinite; filter: drop-shadow(0 2px 2px rgba(0,0,0,.3)); }
+        @keyframes dropbob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(4px); } }
+        .rain { position: absolute; inset: -12px 0 0 0; pointer-events: none; overflow: hidden; border-radius: 12px; z-index: 3; }
+        .rain i { position: absolute; top: -14px; width: 3px; height: 14px; border-radius: 3px; background: linear-gradient(#bfe8ff, #3fa5f0); animation: rainfall .6s linear infinite; }
+        @keyframes rainfall { to { transform: translateY(140px); opacity: .1; } }
+        .particle { position: absolute; left: 50%; top: 50%; pointer-events: none; z-index: 5; font-size: 16px; animation: burst .9s ease-out forwards; }
+        @keyframes burst {
+            from { transform: translate(-50%, -50%) scale(.5); opacity: 1; }
+            to   { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(1.15) rotate(var(--rot, 0deg)); opacity: 0; }
+        }
+
+        .float-coin {
+            position: fixed; z-index: 100; font-weight: 700; font-size: 22px; pointer-events: none;
+            text-shadow: 0 2px 0 rgba(0,0,0,.35); animation: floatup 1.5s ease-out forwards;
+        }
+        .float-coin.gain { color: #ffe066; } .float-coin.loss { color: #ff9a8a; }
+        @keyframes floatup { from { transform: translateY(0) scale(.8); opacity: 1; } 20% { transform: translateY(-14px) scale(1.2); } to { transform: translateY(-80px) scale(1); opacity: 0; } }
+
+        /* ---------- Zones & registry ---------- */
+        .sub { margin-top: 18px; padding-top: 16px; border-top: 3px dashed rgba(160, 111, 59, .45); }
+        .sub.hidden, .hidden { display: none; }
+        .sub-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+        .sub-head h3 { margin: 0; font-size: 16px; color: var(--wood-dark); display: flex; align-items: center; gap: 8px; }
+        .chip { font-size: 10px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #8a5a28; background: rgba(160,111,59,.18); padding: 2px 9px; border-radius: 999px; }
+        .hint { font-size: 12px; font-weight: 500; color: #8a5a28; margin: 0 0 10px; }
+        #zone-cards { display: grid; grid-template-columns: 1fr; gap: 12px; }
+        .zone-card {
+            position: relative; padding: 12px; border-radius: 14px; border: 3px solid var(--wood);
+            background: linear-gradient(180deg, #fff6dc, #f5e2b0); box-shadow: 0 5px 0 rgba(91, 56, 25, .4);
+            animation: riseIn .5s both;
+        }
+        .zone-card.root { background: linear-gradient(180deg, #e6f6cf, #c9e8a2); border-color: var(--grass-dark); box-shadow: 0 5px 0 rgba(40, 90, 20, .4); }
+        .zone-name { font-weight: 700; color: var(--wood-dark); display: flex; align-items: center; gap: 6px; }
+        .zone-stats { font-size: 11px; font-weight: 500; color: #8a5a28; margin: 2px 0 6px; }
+        .mini { height: 8px; border-radius: 6px; background: rgba(91, 56, 25, .25); overflow: hidden; margin-bottom: 8px; }
+        .mini i { display: block; height: 100%; background: linear-gradient(90deg, #7bd45a, #3f9a2a); border-radius: 6px; transition: width .6s; }
+        .zone-actions { display: flex; gap: 8px; }
+        .zone-actions .btn { flex: 1; }
+        #zone-last, #bst-last { margin-top: 12px; font-size: 12px; display: flex; flex-direction: column; gap: 3px; }
+        .last-title { font-weight: 700; color: #b05a0a; }
+        .last-order { font-family: 'JetBrains Mono', monospace; color: #6b4423; word-break: break-word; }
+        .last-result { font-weight: 600; color: #2f6d22; }
+        #zone-levels { margin-top: 10px; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #8a5a28; display: flex; flex-direction: column; gap: 3px; }
+        .bst-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 8px; }
+        #bst-key { width: 120px; }
+        #bst-stats { font-size: 12px; font-weight: 600; color: #8a5a28; margin-bottom: 6px; }
+        #bst-tree {
+            margin: 0; padding: 12px; max-height: 230px; overflow: auto; white-space: pre; font-size: 12px; color: #f1f7e4;
+            background: #2c3e30; border: 5px solid var(--wood); border-radius: 12px; box-shadow: inset 0 0 18px rgba(0,0,0,.5);
+            font-family: 'JetBrains Mono', monospace;
+        }
+        #bst-inorder { margin-top: 8px; font-size: 12px; color: #8a5a28; font-family: 'JetBrains Mono', monospace; }
+
+        /* ---------- Code lab ---------- */
+        #topic-selector { width: 100%; margin-bottom: 12px; }
+        #code-editor {
+            flex: 1; min-height: 360px; width: 100%; resize: vertical; padding: 14px; font-size: 13px; line-height: 1.6; font-weight: 500;
+            font-family: 'JetBrains Mono', monospace; color: #e8f3d6; background: #2c3e30; border: 5px solid var(--wood); border-radius: 12px;
+            box-shadow: inset 0 0 22px rgba(0,0,0,.55); outline: none;
+        }
+        #output-console {
+            margin-top: 12px; max-height: 200px; overflow: auto; padding: 12px; font-size: 12px; font-family: 'JetBrains Mono', monospace; white-space: pre-wrap;
+            color: #d6f5c0; background: #1d2a20; border: 4px solid var(--wood-dark); border-radius: 12px;
+        }
+        .con-warn { color: #ffd166; } .con-ok { color: #8fe36a; } .con-err { color: #ff8a7a; }
+
+        /* ---------- Weather & journal ---------- */
+        #climate-queue { display: flex; flex-direction: column; gap: 10px; }
+        .event {
+            display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 14px; border: 3px solid var(--wood);
+            background: linear-gradient(180deg, #fff6dc, #f3dfae); box-shadow: 0 4px 0 rgba(91, 56, 25, .35);
+            animation: slidein .5s both;
+        }
+        .event:first-child { border-color: #d98a1c; background: linear-gradient(180deg, #fff0c2, #ffd98a); }
+        .event .ev-ico { font-size: 28px; display: inline-block; animation: wiggle 2.2s ease-in-out infinite; }
+        .event .ev-name { font-weight: 700; color: var(--wood-dark); }
+        .event .ev-sub { font-size: 11px; font-weight: 500; color: #8a5a28; }
+        @keyframes slidein { from { opacity: 0; transform: translateX(30px); } to { opacity: 1; transform: none; } }
+        .empty-note { font-size: 12px; font-weight: 500; color: #8a5a28; text-align: center; padding: 10px; }
+        #action-stack { display: flex; flex-direction: column; gap: 8px; max-height: 300px; overflow: auto; padding: 2px 4px 6px 2px; flex: 1; }
+        .note {
+            position: relative; padding: 8px 10px 8px 14px; font-size: 12px; font-weight: 600; color: var(--ink); border-radius: 6px;
+            background: linear-gradient(180deg, #fffbe6, #fbefb5); border-left: 5px solid #e4851a; box-shadow: 2px 3px 0 rgba(91, 56, 25, .3);
+            animation: slidein .4s both;
+        }
+        .note:nth-child(odd) { transform: rotate(-.6deg); } .note:nth-child(even) { transform: rotate(.6deg); }
+        #stack-panel { flex: 1; display: flex; flex-direction: column; }
+        #stack-panel .btn { margin-top: 12px; }
+
+        /* ---------- Layout helpers (v0.10.0) ---------- */
+@media (max-width: 1023px) { .col.center { order: -1; } }
+.panel-title .chip { margin-left: auto; }
+.empty-state {
+    padding: 14px; text-align: center; font-size: 13px; font-weight: 500; color: #8a5a28;
+    border: 3px dashed rgba(160, 111, 59, .45); border-radius: 14px; background: rgba(255,255,255,.35);
+}
+.topic-hint {
+    margin: 0 0 12px; font-size: 12px; font-weight: 600; color: #2f6d22;
+    background: rgba(99, 184, 74, .16); border: 2px solid rgba(63, 138, 47, .35); border-radius: 10px; padding: 7px 10px;
+}
+.panel.flash { animation: panelflash 1.5s ease; }
+@keyframes panelflash {
+    25%, 60% {
+        transform: scale(1.012);
+        box-shadow: 0 0 0 3px var(--wood-dark), 0 0 0 8px rgba(255, 214, 90, .95), 0 0 36px 10px rgba(255, 214, 90, .85);
+    }
+}
+
+/* ---------- Weather system (v0.11.0) ---------- */
+.sky-tint { position: absolute; inset: 0; opacity: 0; transition: opacity 1.6s ease; }
+#scene.wx-rain .sky-tint   { opacity: 1; background: linear-gradient(180deg, #55697c, #8da1b2 60%, #c3cfd8); }
+#scene.wx-heat .sky-tint   { opacity: 1; background: linear-gradient(180deg, #ff9a3c, #ffcf7a 55%, #fff0c2); }
+#scene.wx-winter .sky-tint { opacity: 1; background: linear-gradient(180deg, #b6d2e9, #e4f1fb 60%, #ffffff); }
+.sun { transition: opacity 1.6s ease, transform 1.6s ease; }
+#scene.wx-rain .sun { opacity: .12; }
+#scene.wx-winter .sun { opacity: .4; }
+#scene.wx-heat .sun { transform: scale(1.4); }
+.cloud { transition: filter 1.6s ease; }
+#scene.wx-rain .cloud { filter: brightness(.6) drop-shadow(0 6px 6px rgba(40, 60, 80, .3)); }
+.hills { transition: filter 1.6s ease; }
+#scene.wx-winter .hills { filter: saturate(.35) brightness(1.3); }
+#scene.wx-heat .hills { filter: saturate(.8) sepia(.4) brightness(1.05); }
+#scene.wx-rain .hills { filter: saturate(.8) brightness(.8); }
+
+.fx-layer { position: absolute; inset: 0; overflow: hidden; pointer-events: none; border-radius: inherit; z-index: 4; }
+#fx-scene { z-index: 2; }
+.fx-drop {
+    position: absolute; top: -20px; width: 2px; height: 16px; border-radius: 2px;
+    background: linear-gradient(rgba(255,255,255,0), rgba(190, 225, 255, .95));
+    animation: fxfall linear infinite;
+}
+.fx-flake {
+    position: absolute; top: -12px; border-radius: 50%; background: #fff; box-shadow: 0 0 6px rgba(255,255,255,.9);
+    animation: fxfall linear infinite;
+}
+@keyframes fxfall { from { transform: translate(0, 0); } to { transform: translate(var(--drift, -12px), var(--fall, 110vh)); } }
+.fx-heat {
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse at 50% 100%, rgba(255, 120, 30, .5), transparent 70%), linear-gradient(rgba(255, 170, 60, .14), transparent);
+    animation: heatpulse 2.2s ease-in-out infinite;
+}
+@keyframes heatpulse { 0%, 100% { opacity: .55; } 50% { opacity: 1; } }
+.fx-sun { position: absolute; inset: 0; background: linear-gradient(115deg, rgba(255, 255, 210, .34) 0%, transparent 45%); animation: sunglow 5s ease-in-out infinite alternate; }
+@keyframes sunglow { from { opacity: .4; transform: translateX(-6%); } to { opacity: 1; transform: translateX(6%); } }
+
+.weather-today {
+    display: flex; align-items: center; gap: 12px; padding: 12px 14px; margin-bottom: 12px; border-radius: 14px;
+    border: 3px solid var(--wood); background: linear-gradient(180deg, #fff6dc, #f3dfae);
+    box-shadow: 0 4px 0 rgba(91, 56, 25, .35); transition: background .8s ease;
+}
+.weather-today.wt-sunny  { background: linear-gradient(180deg, #fff3b0, #ffd95a); }
+.weather-today.wt-rain   { background: linear-gradient(180deg, #d4e6f6, #8fb4d6); }
+.weather-today.wt-heat   { background: linear-gradient(180deg, #ffdca8, #ff9a55); }
+.weather-today.wt-winter { background: linear-gradient(180deg, #f4faff, #bcd9f0); }
+.wt-icon { font-size: 42px; line-height: 1; display: inline-block; filter: drop-shadow(0 3px 2px rgba(0,0,0,.25)); }
+.wt-sunny .wt-icon { animation: spin 14s linear infinite; }
+.wt-rain .wt-icon { animation: bob 1.4s ease-in-out infinite; }
+.wt-heat .wt-icon { animation: sunpulse 1.2s ease-in-out infinite; }
+.wt-winter .wt-icon { animation: wiggle 2.6s ease-in-out infinite; }
+.wt-label { font-size: 10px; font-weight: 700; letter-spacing: 2px; color: #8a5a28; }
+.wt-name { font-size: 20px; font-weight: 700; color: var(--wood-dark); line-height: 1.1; }
+.wt-note { font-size: 11px; font-weight: 500; color: #6b4423; margin-top: 3px; }
+.sub-label { font-size: 11px; font-weight: 700; letter-spacing: 2px; color: #8a5a28; margin: 0 0 8px; }
+
+.day-banner {
+    position: fixed; left: 50%; top: 30%; z-index: 150; pointer-events: none; white-space: nowrap;
+    font-size: clamp(34px, 7vw, 64px); font-weight: 700; color: #fff3d1;
+    text-shadow: 0 4px 0 var(--wood-dark), 0 8px 18px rgba(0,0,0,.45);
+    animation: daybanner 1.9s ease both;
+}
+@keyframes daybanner {
+    0%   { opacity: 0; transform: translate(-50%, 0) scale(.6); }
+    20%  { opacity: 1; transform: translate(-50%, 0) scale(1.1); }
+    30%  { transform: translate(-50%, 0) scale(1); }
+    80%  { opacity: 1; }
+    100% { opacity: 0; transform: translate(-50%, -40px) scale(1); }
+}
+
+/* ---------- Toasts ---------- */
+        #toasts { position: fixed; right: 18px; bottom: 74px; z-index: 200; display: flex; flex-direction: column; gap: 10px; align-items: flex-end; pointer-events: none; }
+        .toast {
+            max-width: 320px; padding: 10px 16px; font-size: 13px; font-weight: 600; color: #fff3d1; border-radius: 12px;
+            background: linear-gradient(180deg, var(--wood-light), var(--wood)); border: 3px solid var(--wood-dark);
+            box-shadow: 0 6px 0 rgba(40, 20, 0, .4), 0 10px 20px rgba(0,0,0,.3); text-shadow: 0 1px 0 rgba(0,0,0,.4);
+            animation: toastin .4s cubic-bezier(.2, 1.5, .4, 1) both, toastout .4s ease 2.2s forwards;
+            transform-origin: top right;
+        }
+        @keyframes toastin { from { transform: translateX(120%) rotate(8deg); opacity: 0; } to { transform: none; opacity: 1; } }
+        @keyframes toastout { to { transform: translateX(120%); opacity: 0; } }
+
+        footer { text-align: center; font-size: 11px; font-weight: 600; color: #3f6a2a; margin-top: 18px; }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
+        }
+    </style>
+</head>
+<body>
+    <!-- ================= ANIMATED SCENE ================= -->
+    <div id="scene" aria-hidden="true">
+        <div class="sky-tint"></div>
+        <div class="sun"><div class="sun-rays"></div><div class="sun-core"></div></div>
+        <div class="cloud c1"></div><div class="cloud c2"></div><div class="cloud c3"></div><div class="cloud c4"></div>
+        <span class="bird b1">🐦</span><span class="bird b2">🐦</span><span class="bird b3">🕊️</span>
+
+        <svg class="hills" viewBox="0 0 1440 400" preserveAspectRatio="none">
+            <path d="M0 220 C240 120 480 260 720 190 C960 120 1200 250 1440 170 L1440 400 L0 400Z" fill="#a4dc82"/>
+            <path d="M0 280 C300 200 520 330 800 250 C1080 180 1260 300 1440 250 L1440 400 L0 400Z" fill="#7ac95b"/>
+            <path d="M0 340 C260 290 560 380 860 320 C1120 270 1300 350 1440 320 L1440 400 L0 400Z" fill="#58a845"/>
+        </svg>
+
+        <span class="scene-item tree t1">🌳</span>
+        <span class="scene-item tree t3">🌲</span>
+        <span class="scene-item tree t2">🌳</span>
+
+        <svg class="scene-item barn" viewBox="0 0 170 140">
+            <polygon points="10,60 85,8 160,60 160,132 10,132" fill="#c0392b"/>
+            <polygon points="2,64 85,2 168,64 160,70 85,16 10,70" fill="#7b241c"/>
+            <rect x="52" y="70" width="66" height="62" fill="#a93226" stroke="#f8e9c6" stroke-width="5"/>
+            <line x1="52" y1="70" x2="118" y2="132" stroke="#f8e9c6" stroke-width="5"/>
+            <line x1="118" y1="70" x2="52" y2="132" stroke="#f8e9c6" stroke-width="5"/>
+            <circle cx="85" cy="42" r="9" fill="#f8e9c6" stroke="#7b241c" stroke-width="3"/>
+        </svg>
+
+        <svg class="scene-item windmill" viewBox="0 0 120 170">
+            <polygon points="42,170 78,170 70,60 50,60" fill="#e8d5a8" stroke="#a97339" stroke-width="3"/>
+            <polygon points="46,60 74,60 60,38" fill="#b5651d"/>
+            <rect x="52" y="130" width="16" height="40" fill="#8a5a28"/>
+            <g class="blades">
+                <rect x="57" y="2" width="6" height="50" fill="#fff3d1" stroke="#a97339" stroke-width="2"/>
+                <rect x="57" y="52" width="6" height="50" fill="#fff3d1" stroke="#a97339" stroke-width="2"/>
+                <rect x="10" y="49" width="50" height="6" fill="#fff3d1" stroke="#a97339" stroke-width="2"/>
+                <rect x="60" y="49" width="50" height="6" fill="#fff3d1" stroke="#a97339" stroke-width="2"/>
+            </g>
+            <circle cx="60" cy="52" r="7" fill="#a97339"/>
+        </svg>
+
+        <span class="butterfly bf1">🦋</span><span class="butterfly bf2">🦋</span>
+        <div class="walker w-sheep"><span>🐑</span></div>
+        <div class="walker w-cow"><span>🐄</span></div>
+        <div class="walker w-tractor"><span>🚜</span></div>
+        <div class="grass-tufts"></div>
+        <div class="fence"></div>
+        <div id="fx-scene" class="fx-layer"></div>
+    </div>
+
+    <div id="toasts"></div>
+
+    <div id="app">
+        <header class="wrap">
+            <div class="sign-wrap">
+                <div class="sign">
+                    <h1><span class="wiggle">🌾</span> Harvest Hollow <span class="wiggle two">🚜</span> <span id="version-badge"></span></h1>
+                    <p>PYTHON FARM SIMULATOR · SDG 2, 13, 15</p>
+                </div>
+            </div>
+            <div class="tags">
+                <div class="tag"><small>DAY</small><b id="day-counter">1</b></div>
+                <div class="tag"><small>SCORE</small><b id="stewardship-counter">0%</b></div>
+            </div>
+        </header>
+
+        <main class="wrap">
+            <!-- LEFT: storage + tree outputs (Topics 12, 4, 5) -->
+            <div class="col">
+                <section id="resources-section" class="panel">
+                    <h2 class="panel-title"><span class="ico">🏚️</span> Farm Storage <span class="chip">Topic 12</span></h2>
+                    <div class="res">
+                        <div class="res-head"><span class="name"><span class="em">💧</span> Water Barrel</span><span id="water-text">0 / 200 L</span></div>
+                        <div class="bar"><div id="water-bar" class="fill water"></div></div>
+                    </div>
+                    <div class="res">
+                        <div class="res-head"><span class="name"><span class="em" style="animation-delay:-.5s">🌰</span> Seed Sack</span><span id="seeds-text">0 / 100</span></div>
+                        <div class="bar"><div id="seeds-bar" class="fill seeds"></div></div>
+                    </div>
+                    <div class="res">
+                        <div class="res-head"><span class="name"><span class="em" style="animation-delay:-1s">☀️</span> Solar Energy</span><span id="energy-text">0 / 120 Wh</span></div>
+                        <div class="bar"><div id="energy-bar" class="fill energy"></div></div>
+                    </div>
+                    <div class="res">
+                        <div class="res-head"><span class="name"><span class="em" style="animation-delay:-1.5s">💖</span> Community Hope</span><span id="hope-text">0 / 100</span></div>
+                        <div class="bar"><div id="hope-bar" class="fill hope"></div></div>
+                    </div>
+                    <div class="coin-row shine">
+                        <span><span class="coin">🪙</span> Coins / Dues</span>
+                        <span id="coins-text">0 Coins</span>
+                    </div>
+                </section>
+
+                <!-- Farm zones (Topic 4). Placeholder until Python calls showZonePanel(...) -->
+                <section id="zone-panel" class="panel">
+                    <h2 class="panel-title"><span class="ico">🪧</span> Farm Zones (Tree) <span class="chip">Topic 4</span></h2>
+                    <div id="zone-empty" class="empty-state">🌳 Run <b>Topic 4</b> in the Barn Lab to grow the zone tree here.</div>
+                    <div id="zone-body" class="hidden">
+                        <p class="hint">Water a zone, then harvest it. Only watered plants can be harvested.</p>
+                        <div id="zone-cards"></div>
+                        <div id="zone-last"></div>
+                        <div id="zone-levels"></div>
+                    </div>
+                </section>
+
+                <!-- Plant Registry BST (Topic 5). Placeholder until Python calls showBstPanel(...) -->
+                <section id="bst-panel" class="panel">
+                    <h2 class="panel-title"><span class="ico">📒</span> Plant Registry (BST) <span class="chip">Topic 5</span></h2>
+                    <div id="bst-empty" class="empty-state">📒 Run <b>Topic 5</b> in the Barn Lab to open the plant registry here.</div>
+                    <div id="bst-body" class="hidden">
+                        <div class="bst-controls">
+                            <input id="bst-key" type="number" min="0" max="24" placeholder="Plot 0-24">
+                            <button onclick="onBstAction('search')" class="btn">🔍 Search</button>
+                            <button onclick="onBstAction('uproot')" class="btn harvest">🪓 Uproot</button>
+                        </div>
+                        <div id="bst-stats"></div>
+                        <pre id="bst-tree"></pre>
+                        <div id="bst-inorder"></div>
+                        <div id="bst-last"></div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- CENTER: field (Topic 3) + Barn Lab (all topics) -->
+            <div class="col center">
+                <section id="view-game" class="panel">
+                    <div class="view-head">
+                        <div>
+                            <h2>Harvest Hollow Field <span class="chip">Topic 3</span></h2>
+                            <p>Click empty soil to plant your chosen crop.</p>
+                        </div>
+                        <div class="pouch">
+                            <span>🎒 Seed Pouch:</span>
+                            <select id="crop-selector"></select>
+                        </div>
+                    </div>
+                    <div class="field"><div id="garden-grid"></div><div id="fx-field" class="fx-layer"></div></div>
+                </section>
+
+                <section id="view-code" class="panel">
+                    <h2 class="panel-title"><span class="ico">📜</span> Student Code Editor (Barn Lab)</h2>
+                    <select id="topic-selector" onchange="loadTopic(true)" style="width: 100%; margin-bottom: 10px;"></select>
+                    <div id="topic-hint" class="topic-hint"></div>
+                    <textarea id="code-editor" readonly spellcheck="false"></textarea>
+                    <button onclick="runPythonCode()" class="btn go wide" style="margin-top: 14px;">▶ Run Python Code</button>
+                    <div id="output-console"></div>
+                </section>
+            </div>
+
+            <!-- RIGHT: queue + stack outputs (Topics 2, 1) -->
+            <div class="col">
+                <section id="climate-queue-panel" class="panel">
+                    <h3 class="panel-title"><span class="ico">⛅</span> Weather Forecast (FIFO) <span class="chip">Topic 2</span></h3>
+                    <div id="weather-today" class="weather-today">
+                        <div id="wt-icon" class="wt-icon">⛅</div>
+                        <div>
+                            <div class="wt-label">TODAY</div>
+                            <div id="wt-name" class="wt-name">No weather yet</div>
+                            <div id="wt-note" class="wt-note">Run Topic 2, then press Next Day.</div>
+                        </div>
+                    </div>
+                    <div class="sub-label">COMING UP</div>
+                    <div id="climate-queue"></div>
+                    <button onclick="onNextDay()" class="btn go wide" style="margin-top: 14px;">🌅 Next Day (Dequeue)</button>
+                </section>
+                <section id="stack-panel" class="panel">
+                    <h3 class="panel-title"><span class="ico">📖</span> Farm Journal (Stack) <span class="chip">Topic 1</span></h3>
+                    <div id="action-stack"></div>
+                    <button onclick="triggerUndo()" class="btn wide">↩ Undo (Stack Pop)</button>
+                </section>
+            </div>
+        </main>
+        <footer class="wrap">🌻 Powered by Python running right in your browser 🌻</footer>
+    </div>
+
+    <script>
+        // =====================================================================
+        // SEMANTIC VERSIONING (SemVer 2.0.0)
+        // Single source of truth. Do not hard-code the version elsewhere.
+        // MAJOR: breaking change (e.g. changing bridge function names/signatures that Python depends on)
+        // MINOR: new backward-compatible feature (e.g. finishing a new topic's code)
+        // PATCH: bug fix or small tweak with no new feature
+        // Use 0.x.y while in development; move to 1.0.0 once all 11 topics are complete.
+        // =====================================================================
+        const APP_VERSION = "0.11.0";
+
+        let pyodideInstance = null;
+        let gardenPlants = {};
+        // Display-only set of watered plot positions (set by Python via setPlotWatered)
+        let wateredPlots = {};
+        // Display-only map of crop name to emoji (filled by addPlantsToDropdown)
+        let cropEmojis = {};
+        // Display-only list of action labels (populated by Python via pushAction). No JS game logic.
+        let displayActionHistory = [];
+
+        // =====================================================================
+        // TOPIC TEMPLATES — paste your Python for each topic into the matching entry.
+        // Call the bridge functions from your Python to update the UI.
+        // Rules for Python inside these template literals:
+        //   - Start every top-level Python line at column 0 (no indentation).
+        //   - Do not use backticks.
+        //   - Write backslashes twice (\\n for a newline).
+        //   - Write \${ instead of ${ .
+        // =====================================================================
+        const topicTemplates = {
+            1: {
+                title: "Python OOP + Big O + Stacks",
+                code: `# Topic 1: Python OOP + Big O + Stacks
+class ActionHistoryStack:
+    def __init__(self):
+        self.actions = []
+
+    def push_action(self, action_string):
+        self.actions.append(action_string)
+        pushAction(action_string)
+        print(f"Pushed action: {action_string}")
+
+    def pop_action(self):
+        if not self.is_empty():
+            removed = self.actions.pop()
+            print(f"Popped action: {removed}")
+            return removed
+        print("Stack is empty, nothing to pop")
+        return None
+
+    def peek(self):
+        if not self.is_empty():
+            print(f"Top action (peek): {self.actions[-1]}")
+            return self.actions[-1]
+        print("Stack is empty, nothing to peek")
+        return None
+
+    def is_empty(self):
+        return len(self.actions) == 0
+
+
+stack = ActionHistoryStack()
+
+stack.push_action("Planted Corn in Plot 1")
+stack.push_action("Watered Potato in Plot 2")
+stack.push_action("Planted Tomato in Plot 3")
+
+stack.peek()
+stack.pop_action()
+
+print("Action History Stack ready! (push, pop & peek tested)")
+
+
+`
+            },
+            2: {
+                title: "Queues & Deques (FIFO Elements)",
+                code: `# Topic 2: Queues & Deques (FIFO Elements)
+from collections import deque
+import random
+
+
+# ---- What each kind of weather does to the farm ----
+# "water" multiplies what watering costs, "harvest" multiplies what harvesting pays
+WEATHER_EFFECTS = {
+    "Sunny":      {"water": 1.0, "harvest": 1.25, "note": "Clear skies: harvests pay +25% and the solar panels charge (+10 Wh)"},
+    "Heavy Rain": {"water": 1.0, "harvest": 1.0,  "note": "Rain waters every planted crop for free and refills the barrel (+40 L)"},
+    "Heat":       {"water": 2.0, "harvest": 0.75, "note": "Heatwave: crops dry out, watering costs double, harvests pay -25%, the barrel loses 20 L"},
+    "Winter":     {"water": 0.5, "harvest": 0.5,  "note": "Frost: watering costs half, harvests pay half, community hope dips (-5)"},
+}
+FORECAST_DAYS = 3
+
+
+class ClimateQueue:
+
+    def __init__(self):
+        self.queue = deque()
+
+    def add_challenge(self, event_name):     # enqueue at the back: O(1)
+        self.queue.append(event_name)
+
+    def process_hazard(self):                # dequeue from the front: O(1)
+        if len(self.queue) > 0:
+            return self.queue.popleft()
+        return None
+
+
+q = ClimateQueue()
+
+q.add_challenge("Winter")
+q.add_challenge("Heavy Rain")
+q.add_challenge("Heat")
+
+day = 1
+current_weather = "Sunny"
+
+
+# ---- A function that depends on the current weather ----
+def weather_modifier(kind):
+    # kind is "water" or "harvest": today's weather decides the multiplier
+    return WEATHER_EFFECTS[current_weather][kind]
+
+
+def apply_weather(weather):
+    # One-time effects when a new day starts.
+    # They touch the resources and the field only if Topic 3 / Topic 12 already ran.
+    report = []
+
+    if "resources" in globals():
+        if weather == "Sunny":
+            resources["energy"] = min(120, resources["energy"] + 10)
+            report.append("solar +10 Wh")
+        elif weather == "Heavy Rain":
+            resources["water"] = min(200, resources["water"] + 40)
+            report.append("barrel +40 L")
+        elif weather == "Heat":
+            resources["water"] = max(0, resources["water"] - 20)
+            report.append("barrel -20 L")
+        elif weather == "Winter":
+            resources["hope"] = max(0, resources["hope"] - 5)
+            report.append("hope -5")
+        updateResources(
+            resources["water"],
+            resources["seeds"],
+            resources["energy"],
+            resources["hope"],
+            resources["coins"],
+        )
+
+    if "garden" in globals():
+        if weather == "Heavy Rain":
+            watered = 0
+            for r in range(garden.rows):
+                for c in range(garden.cols):
+                    if garden.cells[r][c] is not None and garden.water(r, c):
+                        watered += 1
+            report.append(f"rain watered {watered} crops")
+        elif weather == "Heat":
+            dried = 0
+            for r in range(garden.rows):
+                for c in range(garden.cols):
+                    if garden.watered[r][c]:
+                        garden.watered[r][c] = False
+                        setPlotWatered(garden.to_position(r, c), False)
+                        dried += 1
+            report.append(f"heat dried {dried} crops")
+        if "send_panel" in globals():
+            send_panel()
+
+    return report
+
+
+def show_weather():
+    setDay(day)
+    setWeather(current_weather, WEATHER_EFFECTS[current_weather]["note"])
+    updateClimateQueue(list(q.queue))
+
+
+def advance_day():
+    global day, current_weather
+    upcoming = q.process_hazard()            # FIFO: the oldest forecast arrives first
+    if upcoming is None:
+        upcoming = "Sunny"
+    while len(q.queue) < FORECAST_DAYS:      # keep the forecast full
+        q.add_challenge(random.choice(list(WEATHER_EFFECTS)))
+    day += 1
+    current_weather = upcoming
+    report = apply_weather(current_weather)
+    show_weather()
+    return report
+
+
+# ---- Next Day button: JS calls on_next_day ----
+def on_next_day():
+    report = advance_day()
+    effects = ", ".join(report) if report else "no farm changes yet"
+    pushAction(f"Day {day}: {current_weather} arrives")
+    print(f"Day {day}: {current_weather} was dequeued. Forecast now: {list(q.queue)}")
+    print(f"Effects: {effects}")
+    showToast(f"Day {day}: {current_weather}. {WEATHER_EFFECTS[current_weather]['note']}")
+
+
+show_weather()
+
+print("Climate Queue (FIFO) ready! Press Next Day in the Weather Forecast panel.")
+`
+            },
+            3: {
+                title: "Static/Dynamic Arrays, 2D Lists, & Memory Structures",
+                code: `# Topic 3: Static/Dynamic Arrays, 2D Lists, & Memory Structures
+
+ROWS = 5
+COLS = 5
+
+
+# ---- Static array: fixed size, chosen up front ----
+class StaticArray:
+    def __init__(self, capacity):
+        self.capacity = capacity
+        self.data = [None] * capacity
+
+    def _check(self, index):
+        if index < 0 or index >= self.capacity:
+            raise IndexError(f"Index {index} is outside 0 to {self.capacity - 1}")
+
+    def get(self, index):      # O(1)
+        self._check(index)
+        return self.data[index]
+
+    def set(self, index, value):   # O(1)
+        self._check(index)
+        self.data[index] = value
+
+
+# ---- Dynamic array: doubles its capacity when full ----
+class DynamicArray:
+    def __init__(self):
+        self.capacity = 2
+        self.size = 0
+        self.data = [None] * self.capacity
+
+    def append(self, value):   # O(1) amortized
+        if self.size == self.capacity:
+            self._resize(self.capacity * 2)
+        self.data[self.size] = value
+        self.size += 1
+
+    def _resize(self, new_capacity):   # O(n): copies every element
+        new_data = [None] * new_capacity
+        for i in range(self.size):
+            new_data[i] = self.data[i]
+        print(f"Resized: capacity {self.capacity} to {new_capacity}")
+        self.data = new_data
+        self.capacity = new_capacity
+
+    def get(self, index):      # O(1)
+        if index < 0 or index >= self.size:
+            raise IndexError(f"Index {index} is outside 0 to {self.size - 1}")
+        return self.data[index]
+
+
+# ---- 2D list: the garden grid ----
+class GardenGrid:
+    def __init__(self, rows, cols):
+        self.rows = rows
+        self.cols = cols
+        self.cells = [[None] * cols for _ in range(rows)]
+        self.watered = [[False] * cols for _ in range(rows)]   # a second 2D list, same shape
+        self.planting_log = DynamicArray()
+
+    def to_position(self, row, col):
+        # Row-major order: flattens (row, col) into the 0-24 index the UI uses
+        return row * self.cols + col
+
+    def plant(self, row, col, name):
+        if row < 0 or row >= self.rows or col < 0 or col >= self.cols:
+            print(f"Cannot plant {name}: ({row}, {col}) is off the grid")
+            return False
+        if self.cells[row][col] is not None:
+            print(f"Cannot plant {name}: ({row}, {col}) already has {self.cells[row][col]}")
+            return False
+        self.cells[row][col] = name
+        self.planting_log.append(name)
+        addPlantToGrid(self.to_position(row, col), name)
+        pushAction(f"Planted {name} at row {row}, col {col}")
+        print(f"Planted {name} at ({row}, {col}), position {self.to_position(row, col)}")
+        return True
+
+    def water(self, row, col):
+        if self.cells[row][col] is None or self.watered[row][col]:
+            return False
+        self.watered[row][col] = True
+        setPlotWatered(self.to_position(row, col), True)
+        return True
+
+    def harvest(self, row, col):
+        # Only watered plants can be harvested
+        if self.cells[row][col] is None or not self.watered[row][col]:
+            return None
+        crop = self.cells[row][col]
+        self.cells[row][col] = None
+        self.watered[row][col] = False
+        clearPlot(self.to_position(row, col))
+        return crop
+
+    def show(self):
+        # Capital letter = planted, lowercase = watered, dot = empty
+        for r in range(self.rows):
+            symbols = []
+            for c in range(self.cols):
+                cell = self.cells[r][c]
+                if cell is None:
+                    symbols.append(".")
+                elif self.watered[r][c]:
+                    symbols.append(cell[0].lower())
+                else:
+                    symbols.append(cell[0])
+            print(" ".join(symbols))
+
+
+# ---- Static array demo: the seed bank has exactly 3 slots ----
+crop_names = ["Corn", "Potato", "Tomato"]
+seed_bank = StaticArray(3)
+for i in range(3):
+    seed_bank.set(i, 10)
+print(f"Seed bank: {crop_names[0]} x{seed_bank.get(0)}, {crop_names[1]} x{seed_bank.get(1)}, {crop_names[2]} x{seed_bank.get(2)}")
+
+try:
+    seed_bank.set(3, 10)
+except IndexError as e:
+    print(f"Static array is full: {e}")
+
+
+# ---- Memory demo: why [[None] * COLS] * ROWS is a bug ----
+bad_grid = [[None] * COLS] * ROWS
+bad_grid[0][0] = "X"
+print(f"Bad grid: bad_grid[3][0] is {bad_grid[3][0]} (all rows are the same list)")
+print(f"Bad grid rows share memory: {bad_grid[0] is bad_grid[1]}")
+
+good_grid = [[None] * COLS for _ in range(ROWS)]
+good_grid[0][0] = "X"
+print(f"Good grid: good_grid[3][0] is {good_grid[3][0]} (each row is its own list)")
+print(f"Good grid rows share memory: {good_grid[0] is good_grid[1]}")
+
+
+# ---- Resources: planting costs coins ----
+CROP_COSTS = {"Corn": 100, "Potato": 25, "Tomato": 50}
+CROP_EMOJIS = {"Corn": "🌽", "Potato": "🥔", "Tomato": "🍅"}
+WATER_NEEDS = {"Corn": 2, "Potato": 8, "Tomato": 6}          # litres to water one plant
+HARVEST_VALUE = {"Corn": 160, "Potato": 40, "Tomato": 80}    # coins earned per harvested plant
+
+resources = {"water": 200, "seeds": 90, "energy": 90, "hope": 80, "coins": 2500}
+
+
+def refresh_resources():
+    updateResources(
+        resources["water"],
+        resources["seeds"],
+        resources["energy"],
+        resources["hope"],
+        resources["coins"],
+    )
+
+
+# ---- Use the real grid: it starts empty, planting happens when you click a tile ----
+clearGarden()
+garden = GardenGrid(ROWS, COLS)
+garden.show()
+print(f"Planting log: size {garden.planting_log.size}, capacity {garden.planting_log.capacity}")
+
+refresh_resources()
+addPlantsToDropdown([(name, CROP_EMOJIS[name], CROP_COSTS[name]) for name in CROP_COSTS])
+
+
+# ---- Click-to-plant: JS calls on_tile_click when a tile is clicked ----
+def on_tile_click(pos, crop):
+    pos = int(pos)
+    row, col = divmod(pos, COLS)
+    if not crop:
+        showToast("Pick a crop from the Seed Pouch first.")
+        return
+    cost = CROP_COSTS[crop]
+    if resources["coins"] < cost:
+        showToast(f"Not enough coins for {crop}: costs {cost}, you have {resources['coins']}")
+        print(f"Cannot afford {crop}: costs {cost}, coins left {resources['coins']}")
+        return
+    if garden.plant(row, col, crop):
+        resources["coins"] -= cost
+        refresh_resources()
+        print(f"Spent {cost} coins on {crop}, coins left {resources['coins']}")
+        garden.show()
+        log = garden.planting_log
+        print(f"Planting log: size {log.size}, capacity {log.capacity}")
+    else:
+        showToast(f"Can't plant {crop} at row {row}, col {col}")
+
+
+print("Arrays & 2D Lists ready! Click a tile in the Farm Field to plant.")
+`
+            },
+            4: {
+                title: "Hierarchical Trees & Traversals",
+                code: `# Topic 4: Hierarchical Trees & Traversals
+import json
+from collections import deque
+
+if "garden" not in globals():
+    raise RuntimeError("Run Topic 3 first: Topic 4 works on the garden grid that Topic 3 creates.")
+
+
+# ---- General tree: the farm is split into zones, and each zone into plots ----
+class TreeNode:
+    def __init__(self, name, row=None, col=None):
+        self.name = name
+        self.row = row
+        self.col = col
+        self.children = []
+
+    def add_child(self, child):
+        self.children.append(child)
+        return child
+
+    def is_leaf(self):
+        return len(self.children) == 0
+
+
+sanctuary = TreeNode("Whole Farm")
+ZONES = [("North Field", [0, 1]), ("Center Row", [2]), ("South Field", [3, 4])]
+
+for zone_name, zone_rows in ZONES:
+    zone = sanctuary.add_child(TreeNode(zone_name))
+    for r in zone_rows:
+        for c in range(COLS):
+            zone.add_child(TreeNode(f"Plot {r},{c}", r, c))
+
+
+def short(node):
+    return node.name.replace("Plot ", "")
+
+
+def find_node(node, name):
+    if node.name == name:
+        return node
+    for child in node.children:
+        found = find_node(child, name)
+        if found is not None:
+            return found
+    return None
+
+
+# ---- Traversals ----
+# Preorder: the node first, then its children (parent before child)
+def preorder(node, result):
+    result.append(node)
+    for child in node.children:
+        preorder(child, result)
+    return result
+
+
+# Level-order (BFS): one level at a time, using a queue
+def level_order(root):
+    levels = []
+    queue = deque([root])
+    while queue:
+        level = []
+        for _ in range(len(queue)):
+            node = queue.popleft()
+            level.append(node)
+            for child in node.children:
+                queue.append(child)
+        levels.append(level)
+    return levels
+
+
+# ---- Counting (a node needs its children's counts first, like postorder) ----
+def count_plants(node):
+    if node.is_leaf():
+        planted = garden.cells[node.row][node.col] is not None
+        watered = garden.watered[node.row][node.col]
+        return (1 if planted else 0), (1 if watered else 0)
+    planted = 0
+    watered = 0
+    for child in node.children:
+        p, w = count_plants(child)
+        planted += p
+        watered += w
+    return planted, watered
+
+
+def count_plots(node):
+    if node.is_leaf():
+        return 1
+    return sum(count_plots(child) for child in node.children)
+
+
+def count_nodes(node):
+    return 1 + sum(count_nodes(child) for child in node.children)
+
+
+def height(node):
+    if node.is_leaf():
+        return 0
+    return 1 + max(height(child) for child in node.children)
+
+
+# ---- Weather (Topic 2) changes the prices; without a Topic 2 run every multiplier is 1.0 ----
+def weather_mod(kind):
+    if "weather_modifier" in globals():
+        return weather_modifier(kind)
+    return 1.0
+
+
+def weather_text():
+    if "current_weather" in globals():
+        return f" (weather: {current_weather})"
+    return ""
+
+
+# ---- Watering uses PREORDER: the zone first, then its plots from the top left ----
+# Water is limited, so the visiting order decides which plants get it first.
+def water_zone(node, stats):
+    order = preorder(node, [])
+    for n in order:
+        if not n.is_leaf():
+            continue
+        crop = garden.cells[n.row][n.col]
+        if crop is None or garden.watered[n.row][n.col]:
+            continue
+        need = max(1, round(WATER_NEEDS[crop] * weather_mod("water")))
+        if resources["water"] < need:
+            stats["dry"] += 1
+            continue
+        resources["water"] -= need
+        garden.water(n.row, n.col)
+        stats["watered"] += 1
+        stats["used"] += need
+    return order
+
+
+# ---- Harvesting uses POSTORDER: plots first, then the zone adds up its children ----
+def harvest(node, order, stats):
+    if node.is_leaf():
+        order.append(node)
+        crop = garden.cells[node.row][node.col]
+        if crop is None:
+            return 0
+        if not garden.watered[node.row][node.col]:
+            stats["dry"] += 1
+            return 0
+        garden.harvest(node.row, node.col)
+        stats["harvested"] += 1
+        return round(HARVEST_VALUE[crop] * weather_mod("harvest"))
+    total = 0
+    for child in node.children:
+        total += harvest(child, order, stats)
+    order.append(node)                      # the node is visited AFTER its children
+    print(f"{node.name}: harvested {total} coins")
+    return total
+
+
+# ---- What the buttons do ----
+last_action = {}
+
+
+def order_text(order, from_end=False):
+    names = [short(node) for node in order]
+    if len(names) <= 9:
+        return " → ".join(names)
+    if from_end:
+        return "… → " + " → ".join(names[-8:])
+    return " → ".join(names[:8]) + " → …"
+
+
+def on_zone_action(zone_name, action):
+    node = find_node(sanctuary, zone_name)
+    if node is None:
+        showToast(f"Unknown zone: {zone_name}")
+        return
+
+    if action == "water":
+        stats = {"watered": 0, "used": 0, "dry": 0}
+        order = water_zone(node, stats)
+        refresh_resources()
+        if stats["watered"] > 0:
+            result = f"Watered {stats['watered']} plants, used {stats['used']} L, {resources['water']} L left"
+            if stats["dry"] > 0:
+                result += f". {stats['dry']} plants stayed dry: out of water"
+        elif stats["dry"] > 0:
+            result = f"Out of water: {stats['dry']} plants stayed dry"
+        else:
+            result = "Nothing to water here: no unwatered plants"
+        title = f"Water {node.name} (preorder)"
+        text = order_text(order)
+    elif action == "harvest":
+        stats = {"harvested": 0, "dry": 0}
+        order = []
+        earned = harvest(node, order, stats)
+        resources["coins"] += earned
+        refresh_resources()
+        if stats["harvested"] > 0:
+            result = f"Harvested {stats['harvested']} plants for {earned} coins"
+            if stats["dry"] > 0:
+                result += f". {stats['dry']} unwatered plants were left growing"
+        elif stats["dry"] > 0:
+            result = f"Nothing harvested: {stats['dry']} plants need water first"
+        else:
+            result = "Nothing to harvest here: no plants"
+        title = f"Harvest {node.name} (postorder)"
+        text = order_text(order, from_end=True)
+    else:
+        return
+
+    result += weather_text()
+    last_action.update({"title": title, "order": text, "result": result})
+    print(f"{title}: {result}")
+    print(f"Visit order: {text}")
+    showToast(result)
+    send_panel()
+
+
+# ---- Send a summary to the Farm Zones panel (display only) ----
+def level_lines():
+    lines = []
+    for i, level in enumerate(level_order(sanctuary)):
+        if level[0].is_leaf():
+            planted = sum(count_plants(node)[0] for node in level)
+            lines.append(f"Level {i}: {len(level)} plots ({planted} planted)")
+        else:
+            parts = []
+            for node in level:
+                planted, watered = count_plants(node)
+                parts.append(f"{node.name} ({planted} planted, {watered} watered)")
+            lines.append(f"Level {i}: " + "; ".join(parts))
+    return lines
+
+
+def zone_info(node):
+    planted, watered = count_plants(node)
+    return {"name": node.name, "plots": count_plots(node), "planted": planted, "watered": watered}
+
+
+def send_panel():
+    panel = {
+        "root": zone_info(sanctuary),
+        "zones": [zone_info(zone) for zone in sanctuary.children],
+        "levels": level_lines(),
+        "last": last_action,
+    }
+    showZonePanel(json.dumps(panel))
+
+
+print(f"Zone tree: {count_nodes(sanctuary)} nodes, {count_plots(sanctuary)} plots, height {height(sanctuary)}")
+for line in level_lines():
+    print(line)
+
+send_panel()
+print("Topic 4 ready! Plant some crops, then use the Water and Harvest buttons in the Farm Zones panel.")
+`
+            },
+            5: {
+                title: "Binary Search Trees (BST) & Node Mutation",
+                code: `# Topic 5: Binary Search Trees (BST) & Node Mutation
+import json
+
+if "garden" not in globals():
+    raise RuntimeError("Run Topic 3 first: Topic 5 works on the garden grid that Topic 3 creates.")
+
+
+# ---- BST node: smaller keys go left, bigger keys go right ----
+class BSTNode:
+    def __init__(self, key, crop):
+        self.key = key        # plot position 0-24
+        self.crop = crop
+        self.left = None
+        self.right = None
+
+
+class PlantRegistry:
+    def __init__(self):
+        self.root = None
+        self.size = 0
+
+    def insert(self, key, crop):       # O(h)
+        self.root = self._insert(self.root, key, crop)
+
+    def _insert(self, node, key, crop):
+        if node is None:
+            self.size += 1
+            return BSTNode(key, crop)
+        if key < node.key:
+            node.left = self._insert(node.left, key, crop)
+        elif key > node.key:
+            node.right = self._insert(node.right, key, crop)
+        else:
+            node.crop = crop
+        return node
+
+    def search(self, key):             # O(h): returns (node, path of keys visited)
+        node = self.root
+        path = []
+        while node is not None:
+            path.append(node.key)
+            if key == node.key:
+                return node, path
+            node = node.left if key < node.key else node.right
+        return None, path
+
+    def delete(self, key):             # O(h)
+        if self.search(key)[0] is None:
+            return False
+        self.root = self._delete(self.root, key)
+        self.size -= 1
+        return True
+
+    def _delete(self, node, key):
+        if node is None:
+            return None
+        if key < node.key:
+            node.left = self._delete(node.left, key)
+        elif key > node.key:
+            node.right = self._delete(node.right, key)
+        else:
+            # Case 1 and 2: no child or one child, the child takes this node's place
+            if node.left is None:
+                return node.right
+            if node.right is None:
+                return node.left
+            # Case 3: two children, copy the inorder successor (smallest key on the right)
+            successor = node.right
+            while successor.left is not None:
+                successor = successor.left
+            node.key = successor.key
+            node.crop = successor.crop
+            node.right = self._delete(node.right, successor.key)
+        return node
+
+    def inorder(self, node, result):   # left, node, right: keys come out sorted
+        if node is not None:
+            self.inorder(node.left, result)
+            result.append(node)
+            self.inorder(node.right, result)
+        return result
+
+    def height(self, node):
+        if node is None:
+            return -1
+        return 1 + max(self.height(node.left), self.height(node.right))
+
+
+registry = PlantRegistry()
+
+
+# ---- Fill the registry from the plants already on the grid ----
+# Inserting sorted keys one by one would make a straight line (height = n),
+# so we insert the middle key first to keep the tree balanced.
+def build_balanced(pairs):
+    if not pairs:
+        return
+    mid = len(pairs) // 2
+    registry.insert(pairs[mid][0], pairs[mid][1])
+    build_balanced(pairs[:mid])
+    build_balanced(pairs[mid + 1:])
+
+
+existing = []
+for pos in range(ROWS * COLS):
+    r, c = divmod(pos, COLS)
+    if garden.cells[r][c] is not None:
+        existing.append((pos, garden.cells[r][c]))
+build_balanced(existing)
+
+
+# ---- Keep the registry matching the grid (Topic 4 harvests remove plants) ----
+def sync_registry():
+    for node in registry.inorder(registry.root, []):
+        r, c = divmod(node.key, COLS)
+        if garden.cells[r][c] is None:
+            registry.delete(node.key)
+    for pos in range(ROWS * COLS):
+        r, c = divmod(pos, COLS)
+        if garden.cells[r][c] is not None and registry.search(pos)[0] is None:
+            registry.insert(pos, garden.cells[r][c])
+
+
+# ---- Planting also inserts into the registry ----
+if not getattr(on_tile_click, "is_bst_wrapper", False):
+    _base_tile_click = on_tile_click
+
+
+def on_tile_click(pos, crop):
+    pos = int(pos)
+    row, col = divmod(pos, COLS)
+    before = garden.cells[row][col]
+    _base_tile_click(pos, crop)
+    after = garden.cells[row][col]
+    if before is None and after is not None:
+        registry.insert(pos, after)
+        print(f"Inserted key {pos} into the registry, size {registry.size}, height {registry.height(registry.root)}")
+        send_bst_panel()
+
+
+on_tile_click.is_bst_wrapper = True
+
+
+# ---- Panel: sideways tree (right subtree on top, root on the left) ----
+last_bst = {}
+
+
+def tree_lines(node, depth, out):
+    if node is None:
+        return out
+    tree_lines(node.right, depth + 1, out)
+    out.append("      " * depth + f"{node.key} {CROP_EMOJIS[node.crop]}")
+    tree_lines(node.left, depth + 1, out)
+    return out
+
+
+def send_bst_panel():
+    sync_registry()
+    nodes = registry.inorder(registry.root, [])
+    panel = {
+        "size": registry.size,
+        "height": registry.height(registry.root),
+        "inorder": [node.key for node in nodes],
+        "lines": tree_lines(registry.root, 0, []),
+        "last": last_bst,
+    }
+    showBstPanel(json.dumps(panel))
+
+
+# ---- What the buttons do ----
+def on_bst_action(action, value):
+    sync_registry()
+    try:
+        key = int(value)
+    except (TypeError, ValueError):
+        showToast("Enter a plot number from 0 to 24")
+        return
+    if key < 0 or key >= ROWS * COLS:
+        showToast("Plot numbers go from 0 to 24")
+        return
+
+    node, path = registry.search(key)
+    path_text = " → ".join(str(k) for k in path) if path else "(empty tree)"
+
+    if action == "search":
+        title = f"Search plot {key}"
+        if node is None:
+            result = f"Not found after {len(path)} steps: nothing planted at plot {key}"
+        else:
+            result = f"Found {node.crop} at plot {key} in {len(path)} steps"
+    elif action == "uproot":
+        title = f"Uproot plot {key}"
+        if node is None:
+            result = f"Nothing to uproot: plot {key} is empty"
+        else:
+            crop = node.crop
+            kids = (node.left is not None) + (node.right is not None)
+            case = ["leaf: removed directly", "one child: the child takes its place", "two children: replaced by the inorder successor"][kids]
+            registry.delete(key)
+            row, col = divmod(key, COLS)
+            garden.cells[row][col] = None
+            garden.watered[row][col] = False
+            clearPlot(key)
+            refund = CROP_COSTS[crop] // 2
+            resources["coins"] += refund
+            refresh_resources()
+            pushAction(f"Uprooted {crop} at plot {key}")
+            result = f"Uprooted {crop} ({case}). Refunded {refund} coins"
+    else:
+        return
+
+    last_bst.update({"title": title, "path": path_text, "result": result})
+    print(f"{title}: {result}")
+    print(f"Path: {path_text}")
+    showToast(result)
+    send_bst_panel()
+
+
+sync_registry()
+print(f"Registry: {registry.size} plants, height {registry.height(registry.root)}")
+print("Inorder keys:", [node.key for node in registry.inorder(registry.root, [])])
+send_bst_panel()
+print("Topic 5 ready! Plant some crops, then Search or Uproot a plot number in the Plant Registry panel.")
+`
+            },
+            6: {
+                title: "Hash Tables, Collisions, & Rehashing",
+                code: `# Topic 6: Hash Tables, Collisions, & Rehashing
+# ==== WRITE YOUR CODE HERE ====
+`
+            },
+            7: {
+                title: "Graph Foundations, Adjacency Matrices/Lists, & DFS/BFS",
+                code: `# Topic 7: Graph Foundations, Adjacency Matrices/Lists, & DFS/BFS
+# ==== WRITE YOUR CODE HERE ====
+`
+            },
+            8: {
+                title: "Sorting Algorithms (Bubble, Insertion, Selection, Quick, & Merge Sort)",
+                code: `# Topic 8: Sorting Algorithms (Bubble, Insertion, Selection, Quick, & Merge Sort)
+# ==== WRITE YOUR CODE HERE ====
+`
+            },
+            9: {
+                title: "Searching Algorithms (Linear Search vs. Binary Search)",
+                code: `# Topic 9: Searching Algorithms (Linear Search vs. Binary Search)
+# ==== WRITE YOUR CODE HERE ====
+`
+            },
+            10: {
+                title: "Advanced Strategic Paradigms (Dijkstra's Algorithm & Greedy Patterns)",
+                code: `# Topic 10: Advanced Strategic Paradigms (Dijkstra's Algorithm & Greedy Patterns)
+# ==== WRITE YOUR CODE HERE ====
+`
+            },
+            11: {
+                title: "Dynamic Programming (DP), Memoization, & Divide-and-Conquer",
+                code: `# Topic 11: Dynamic Programming (DP), Memoization, & Divide-and-Conquer
+# ==== WRITE YOUR CODE HERE ====
+`
+            },
+            12: {
+                title: "Resource Storage and Seed Bank",
+                code: `# Topic 12: Additional Module
+class Plant:
+    def __init__(self, name, water_needed):
+        self.name = name
+        self.water_needed = water_needed
+        self.health = 100
+        print(f"Successfully Created Plant: {self.name}")
+
+
+resources = {"water": 200, "seeds": 90, "energy": 90, "hope": 80, "coins": 2500}
+
+updateResources(
+    resources["water"],
+    resources["seeds"],
+    resources["energy"],
+    resources["hope"],
+    resources["coins"],
+)
+
+addPlantsToDropdown([
+    ("Corn", "🌽", 100),
+    ("Potato", "🥔", 25),
+    ("Tomato", "🍅", 50),
+])
+
+print("Resource Storage and Seed Bank ready!")
+`
+            }
+        };
+
+        async function initPyodide() {
+            if (pyodideInstance) return;
+            const consoleEl = document.getElementById("output-console");
+            if (consoleEl) {
+                consoleEl.innerHTML = `<span class="con-warn">Loading Python...</span><br>`;
+            }
+            try {
+                pyodideInstance = await loadPyodide();
+                // Bridge functions Python may call (pure display — no game rules)
+                pyodideInstance.globals.set("addPlantToGrid", addPlantToGrid);
+                pyodideInstance.globals.set("updateResources", updateResources);
+                pyodideInstance.globals.set("addPlantsToDropdown", addPlantsToDropdown);
+                pyodideInstance.globals.set("pushAction", pushAction);
+                pyodideInstance.globals.set("updateClimateQueue", updateClimateQueue);
+                pyodideInstance.globals.set("showToast", showToast);
+                pyodideInstance.globals.set("clearGarden", clearGarden);
+                pyodideInstance.globals.set("clearPlot", clearPlot);
+                pyodideInstance.globals.set("setPlotWatered", setPlotWatered);
+                pyodideInstance.globals.set("showZonePanel", showZonePanel);
+                pyodideInstance.globals.set("showBstPanel", showBstPanel);
+                pyodideInstance.globals.set("setDay", setDay);
+                pyodideInstance.globals.set("setWeather", setWeather);
+                await pyodideInstance.runPythonAsync(`
+                    import sys
+                    from js import document
+                    class Console:
+                        def write(self, text):
+                            if text:
+                                el = document.getElementById("output-console")
+                                if el:
+                                    el.innerHTML += text.replace("\\n", "<br>")
+                                    el.scrollTop = el.scrollHeight
+                        def flush(self): pass
+                    sys.stdout = Console()
+                `);
+                if (consoleEl) {
+                    consoleEl.innerHTML = `<span class="con-ok">Python ready.</span><br>`;
+                }
+            } catch (err) {
+                if (consoleEl) {
+                    consoleEl.innerHTML = `<span class="con-err">Failed to load Python: ${err.message}</span>`;
+                }
+                throw err;
+            }
+        }
+
+        // ---- Visual effect helpers (display only) ----
+        function spawnParticles(el, emojis, count, spread) {
+            for (let i = 0; i < count; i++) {
+                const p = document.createElement("span");
+                p.className = "particle";
+                p.textContent = emojis[i % emojis.length];
+                const angle = (Math.PI * 2 * i) / count + Math.random() * 0.6;
+                const dist = (spread || 46) * (0.6 + Math.random() * 0.7);
+                p.style.setProperty("--dx", Math.cos(angle) * dist + "px");
+                p.style.setProperty("--dy", Math.sin(angle) * dist - 10 + "px");
+                p.style.setProperty("--rot", (Math.random() * 120 - 60) + "deg");
+                el.appendChild(p);
+                setTimeout(() => p.remove(), 950);
+            }
+        }
+
+        function makeRain(tile) {
+            const rain = document.createElement("div");
+            rain.className = "rain";
+            for (let i = 0; i < 7; i++) {
+                const d = document.createElement("i");
+                d.style.left = (8 + i * 13) + "%";
+                d.style.animationDelay = (Math.random() * 0.5) + "s";
+                rain.appendChild(d);
+            }
+            tile.appendChild(rain);
+            setTimeout(() => rain.remove(), 1400);
+        }
+
+        let lastCoins = null;
+        function floatCoins(delta) {
+            const anchor = document.getElementById("coins-text");
+            const rect = anchor.getBoundingClientRect();
+            const f = document.createElement("div");
+            f.className = "float-coin " + (delta > 0 ? "gain" : "loss");
+            f.textContent = (delta > 0 ? "+" : "") + delta + " 🪙";
+            f.style.left = (rect.left + rect.width / 2 - 30) + "px";
+            f.style.top = (rect.top - 6) + "px";
+            document.body.appendChild(f);
+            setTimeout(() => f.remove(), 1600);
+        }
+
+        // ---- Weather + day bridges (display only; Python owns the rules) ----
+        const WEATHER_STYLES = { "sunny": "sunny", "heavy rain": "rain", "rain": "rain", "heat": "heat", "winter": "winter" };
+        const WEATHER_ICONS = { sunny: "☀️", rain: "🌧️", heat: "🔥", winter: "❄️" };
+
+        function buildFx(layer, kind, count, fall, particlesOnly) {
+            layer.innerHTML = "";
+            layer.style.setProperty("--fall", fall + "px");
+            if (kind === "rain") {
+                for (let i = 0; i < count; i++) {
+                    const d = document.createElement("i");
+                    d.className = "fx-drop";
+                    d.style.left = Math.random() * 100 + "%";
+                    d.style.animationDuration = (0.55 + Math.random() * 0.5) + "s";
+                    d.style.animationDelay = (-Math.random() * 1.2) + "s";
+                    layer.appendChild(d);
+                }
+            } else if (kind === "winter") {
+                for (let i = 0; i < count; i++) {
+                    const f = document.createElement("i");
+                    f.className = "fx-flake";
+                    const size = 3 + Math.random() * 6;
+                    f.style.width = size + "px";
+                    f.style.height = size + "px";
+                    f.style.left = Math.random() * 100 + "%";
+                    f.style.setProperty("--drift", (Math.random() * 60 - 30) + "px");
+                    f.style.animationDuration = (6 + Math.random() * 7) + "s";
+                    f.style.animationDelay = (-Math.random() * 12) + "s";
+                    layer.appendChild(f);
+                }
+            } else if (!particlesOnly) {
+                const g = document.createElement("i");
+                g.className = kind === "heat" ? "fx-heat" : "fx-sun";
+                layer.appendChild(g);
+            }
+        }
+
+        // setWeather(name: str, note: str)
+        // Shows today's weather card and changes the scene (sky, rain, snow, heat, sunshine).
+        function setWeather(name, note) {
+            const key = WEATHER_STYLES[String(name).toLowerCase()] || "sunny";
+            const scene = document.getElementById("scene");
+            ["sunny", "rain", "heat", "winter"].forEach(k => scene.classList.remove("wx-" + k));
+            scene.classList.add("wx-" + key);
+            document.getElementById("weather-today").className = "weather-today wt-" + key;
+            document.getElementById("wt-icon").textContent = WEATHER_ICONS[key];
+            document.getElementById("wt-name").textContent = name;
+            document.getElementById("wt-note").textContent = note || "";
+            const field = document.querySelector(".field");
+            buildFx(document.getElementById("fx-scene"), key, 80, window.innerHeight + 40, true);
+            buildFx(document.getElementById("fx-field"), key, 28, (field ? field.getBoundingClientRect().height : 400) + 20, false);
+        }
+
+        // setDay(n: int)
+        // Shows the day number in the header and a short "Day N" banner (display only).
+        function setDay(n) {
+            const el = document.getElementById("day-counter");
+            el.textContent = n;
+            el.classList.remove("bump");
+            void el.offsetWidth;
+            el.classList.add("bump");
+            if (n > 1) {
+                const b = document.createElement("div");
+                b.className = "day-banner";
+                b.textContent = "🌅 Day " + n;
+                document.body.appendChild(b);
+                setTimeout(() => b.remove(), 2000);
+            }
+        }
+
+        // Hands the Next Day click to Python. Needs on_next_day(), which Topic 2 defines when you run it.
+        function onNextDay() {
+            if (!pyodideInstance) { showToast("Python is still loading."); return; }
+            const handler = pyodideInstance.globals.get("on_next_day");
+            if (!handler) { showToast("Run Topic 2 first so Python can run the weather."); return; }
+            try {
+                handler();
+            } catch (err) {
+                showToast("Python error: see the Barn Lab console.");
+                const consoleEl = document.getElementById("output-console");
+                if (consoleEl) consoleEl.innerHTML += `<span class="con-err">Error: ${err.message}</span><br>`;
+            } finally {
+                handler.destroy();
+            }
+        }
+
+        // ---- Pure display bridges (called from Python) ----
+
+        // updateClimateQueue(events: list of strings)
+        // Renders the FIFO climate events. Pass an empty list to clear.
+        const EVENT_ICONS = { "sunny": "☀️", "winter": "❄️", "heavy rain": "🌧️", "rain": "🌧️", "heat": "🔥", "drought": "🏜️", "storm": "⛈️", "wind": "🌬️", "flood": "🌊", "frost": "🥶" };
+        function updateClimateQueue(events) {
+            const container = document.getElementById("climate-queue");
+            container.innerHTML = "";
+            if (!events || !events.length) {
+                container.innerHTML = `<div class="empty-note">No forecast yet. Run Topic 2 ⛅</div>`;
+                return;
+            }
+            Array.from(events).forEach((event, i) => {
+                const div = document.createElement("div");
+                div.className = "event";
+                div.style.animationDelay = (i * 0.12) + "s";
+                const ico = document.createElement("span");
+                ico.className = "ev-ico";
+                ico.style.animationDelay = (-i * 0.6) + "s";
+                ico.textContent = EVENT_ICONS[String(event).toLowerCase()] || "🌤️";
+                const box = document.createElement("div");
+                const name = document.createElement("div");
+                name.className = "ev-name";
+                name.textContent = event;
+                const sub = document.createElement("div");
+                sub.className = "ev-sub";
+                sub.textContent = i === 0 ? "Arriving next" : "Queued · position " + (i + 1);
+                box.appendChild(name);
+                box.appendChild(sub);
+                div.appendChild(ico);
+                div.appendChild(box);
+                container.appendChild(div);
+            });
+        }
+
+        // addPlantToGrid(pos: int 0-24, name: str)
+        // Marks a grid cell as planted (display only).
+        function addPlantToGrid(pos, name) {
+            gardenPlants[pos] = name;
+            renderGarden();
+        }
+
+        // clearGarden()
+        // Empties the grid on screen (display only). Python calls this when it makes a fresh grid.
+        function clearGarden() {
+            gardenPlants = {};
+            wateredPlots = {};
+            renderGarden(true);
+        }
+
+        // clearPlot(pos: int 0-24)
+        // Removes one plant from the screen (display only).
+        function clearPlot(pos) {
+            delete gardenPlants[pos];
+            delete wateredPlots[pos];
+            renderGarden();
+        }
+
+        // setPlotWatered(pos: int 0-24, watered: bool)
+        // Shows or hides the water drop on one plot (display only).
+        function setPlotWatered(pos, watered) {
+            if (watered) { wateredPlots[pos] = true; } else { delete wateredPlots[pos]; }
+            renderGarden();
+        }
+
+        // The 25 tiles are built once and then updated, so animations only play where something changed.
+        const tileEls = [];
+        const tileState = [];
+        function buildGrid() {
+            const grid = document.getElementById("garden-grid");
+            grid.innerHTML = "";
+            for (let i = 0; i < 25; i++) {
+                const tile = document.createElement("div");
+                tile.className = "tile empty";
+                tile.onclick = () => onTileClick(i);
+                grid.appendChild(tile);
+                tileEls.push(tile);
+                tileState.push({ crop: null, wet: false });
+            }
+            updateGhosts();
+        }
+
+        function updateGhosts() {
+            const sel = document.getElementById("crop-selector");
+            const emoji = sel && sel.value ? (cropEmojis[sel.value] || "🌱") : "🌱";
+            tileEls.forEach(t => t.setAttribute("data-ghost", emoji));
+        }
+
+        function renderGarden(quiet) {
+            for (let i = 0; i < 25; i++) {
+                const tile = tileEls[i];
+                const st = tileState[i];
+                const crop = gardenPlants[i] || null;
+                const wet = !!wateredPlots[i];
+
+                if (crop !== st.crop) {
+                    tile.querySelectorAll(".crop, .drop").forEach(e => e.remove());
+                    st.wet = false;
+                    tile.classList.remove("wet");
+                    if (crop) {
+                        const span = document.createElement("span");
+                        span.className = "crop pop";
+                        span.style.setProperty("--d", (-(i % 5) * 0.4) + "s");
+                        span.textContent = cropEmojis[crop] || "🌱";
+                        tile.appendChild(span);
+                        tile.classList.remove("empty");
+                        if (!quiet) spawnParticles(tile, ["🟤", "🍃", "🟫"], 6, 44);
+                    } else {
+                        tile.classList.add("empty");
+                        if (!quiet && st.crop) spawnParticles(tile, ["✨", cropEmojis[st.crop] || "🌱", "🍃"], 7, 54);
+                    }
+                    st.crop = crop;
+                }
+
+                if (wet !== st.wet) {
+                    tile.classList.toggle("wet", wet);
+                    tile.querySelectorAll(".drop").forEach(e => e.remove());
+                    if (wet && crop) {
+                        const drop = document.createElement("span");
+                        drop.className = "drop";
+                        drop.textContent = "💧";
+                        tile.appendChild(drop);
+                        if (!quiet) makeRain(tile);
+                    }
+                    st.wet = wet;
+                }
+            }
+        }
+
+        // Hands the click to Python. Python decides whether planting is allowed.
+        // Needs on_tile_click(pos, crop) to exist, which Topic 3 defines when you run it.
+        function onTileClick(pos) {
+            if (!pyodideInstance) { showToast("Python is still loading."); return; }
+            const handler = pyodideInstance.globals.get("on_tile_click");
+            if (!handler) { showToast("Run Topic 3 first so Python can handle clicks."); return; }
+            const crop = document.getElementById("crop-selector").value;
+            try {
+                handler(pos, crop);
+            } catch (err) {
+                showToast("Python error: see the Barn Lab console.");
+                const consoleEl = document.getElementById("output-console");
+                if (consoleEl) consoleEl.innerHTML += `<span class="con-err">Error: ${err.message}</span><br>`;
+            } finally {
+                handler.destroy();
+            }
+        }
+
+        // ---- Farm zones panel (Topic 4) ----
+        // showZonePanel(json: str)
+        // Display only. Python owns the tree and the rules and sends a summary as JSON:
+        // {"root": zone, "zones": [zone], "levels": [str], "last": {title, order, result}}
+        // where zone = {name, plots, planted, watered}
+        function showZonePanel(json) {
+            const data = JSON.parse(json);
+            document.getElementById("zone-empty").classList.add("hidden");
+            document.getElementById("zone-body").classList.remove("hidden");
+
+            const cards = document.getElementById("zone-cards");
+            cards.innerHTML = "";
+            cards.appendChild(buildZoneCard(data.root, true));
+            (data.zones || []).forEach(zone => cards.appendChild(buildZoneCard(zone, false)));
+
+            const last = document.getElementById("zone-last");
+            last.innerHTML = "";
+            if (data.last && data.last.title) {
+                [["last-title", data.last.title],
+                 ["last-order", "Visit order: " + data.last.order],
+                 ["last-result", data.last.result]].forEach(([cls, text]) => {
+                    const d = document.createElement("div");
+                    d.className = cls;
+                    d.textContent = text;
+                    last.appendChild(d);
+                });
+            }
+
+            const levels = document.getElementById("zone-levels");
+            levels.innerHTML = "";
+            (data.levels || []).forEach(line => {
+                const row = document.createElement("div");
+                row.textContent = line;
+                levels.appendChild(row);
+            });
+        }
+
+        function buildZoneCard(zone, isRoot) {
+            const card = document.createElement("div");
+            card.className = "zone-card" + (isRoot ? " root" : "");
+
+            const name = document.createElement("div");
+            name.className = "zone-name";
+            name.textContent = (isRoot ? "🏡 " : "🪧 ") + (isRoot ? `${zone.name} (all zones)` : zone.name);
+            card.appendChild(name);
+
+            const stats = document.createElement("div");
+            stats.className = "zone-stats";
+            stats.textContent = `${zone.plots} plots · ${zone.planted} planted · ${zone.watered} watered`;
+            card.appendChild(stats);
+
+            const mini = document.createElement("div");
+            mini.className = "mini";
+            const fill = document.createElement("i");
+            fill.style.width = zone.plots ? Math.round((zone.planted / zone.plots) * 100) + "%" : "0%";
+            mini.appendChild(fill);
+            card.appendChild(mini);
+
+            const row = document.createElement("div");
+            row.className = "zone-actions";
+            [["💧 Water", "water"], ["🧺 Harvest", "harvest"]].forEach(([text, action]) => {
+                const b = document.createElement("button");
+                b.className = "btn " + action;
+                b.textContent = text;
+                b.onclick = () => onZoneAction(zone.name, action);
+                row.appendChild(b);
+            });
+            card.appendChild(row);
+            return card;
+        }
+
+        // Hands a zone button click to Python. Python decides what happens.
+        // Needs on_zone_action(zone_name, action), which Topic 4 defines when you run it.
+        function onZoneAction(zoneName, action) {
+            if (!pyodideInstance) { showToast("Python is still loading."); return; }
+            const handler = pyodideInstance.globals.get("on_zone_action");
+            if (!handler) { showToast("Run Topic 4 first so Python can handle zone actions."); return; }
+            try {
+                handler(zoneName, action);
+            } catch (err) {
+                showToast("Python error: see the Barn Lab console.");
+                const consoleEl = document.getElementById("output-console");
+                if (consoleEl) consoleEl.innerHTML += `<span class="con-err">Error: ${err.message}</span><br>`;
+            } finally {
+                handler.destroy();
+            }
+        }
+        // ---- end farm zones panel ----
+
+        // ---- Plant Registry BST panel (Topic 5) ----
+        // showBstPanel(json: str)
+        // Display only. Python owns the BST and sends: {size, height, inorder: [int], lines: [str], last: {title, path, result}}
+        function showBstPanel(json) {
+            const data = JSON.parse(json);
+            document.getElementById("bst-empty").classList.add("hidden");
+            document.getElementById("bst-body").classList.remove("hidden");
+            document.getElementById("bst-stats").textContent = `${data.size} plants · height ${data.height}`;
+            document.getElementById("bst-tree").textContent = (data.lines && data.lines.length) ? data.lines.join("\n") : "(empty tree)";
+            document.getElementById("bst-inorder").textContent = "Inorder: " + ((data.inorder && data.inorder.length) ? data.inorder.join(" → ") : "-");
+
+            const last = document.getElementById("bst-last");
+            last.innerHTML = "";
+            if (data.last && data.last.title) {
+                [["last-title", data.last.title],
+                 ["last-order", "Path: " + data.last.path],
+                 ["last-result", data.last.result]].forEach(([cls, text]) => {
+                    const d = document.createElement("div");
+                    d.className = cls;
+                    d.textContent = text;
+                    last.appendChild(d);
+                });
+            }
+        }
+
+        // Hands a registry button click to Python. Needs on_bst_action(action, value) from Topic 5.
+        function onBstAction(action) {
+            if (!pyodideInstance) { showToast("Python is still loading."); return; }
+            const handler = pyodideInstance.globals.get("on_bst_action");
+            if (!handler) { showToast("Run Topic 5 first so Python can handle registry actions."); return; }
+            const value = document.getElementById("bst-key").value;
+            try {
+                handler(action, value);
+            } catch (err) {
+                showToast("Python error: see the Barn Lab console.");
+                const consoleEl = document.getElementById("output-console");
+                if (consoleEl) consoleEl.innerHTML += `<span class="con-err">Error: ${err.message}</span><br>`;
+            } finally {
+                handler.destroy();
+            }
+        }
+        // ---- end Plant Registry BST panel ----
+
+        // updateResources(water, seeds, energy, hope, coins)
+        // Or pass a single object: updateResources({"water": n, "seeds": n, ...})
+        // No fallbacks that turn a valid 0 into a default. Caps used only for bar width.
+        function updateResources(water, seeds, energy, hope, coins) {
+            if (typeof water === "object" && water !== null) {
+                const args = water;
+                water = args.water !== undefined ? args.water : 0;
+                seeds = args.seeds !== undefined ? args.seeds : 0;
+                energy = args.energy !== undefined ? args.energy : 0;
+                hope = args.hope !== undefined ? args.hope : 0;
+                coins = args.coins !== undefined ? args.coins : 0;
+            } else {
+                water = water !== undefined ? water : 0;
+                seeds = seeds !== undefined ? seeds : 0;
+                energy = energy !== undefined ? energy : 0;
+                hope = hope !== undefined ? hope : 0;
+                coins = coins !== undefined ? coins : 0;
+            }
+            const waterMax = 200, seedsMax = 100, energyMax = 120, hopeMax = 100;
+            document.getElementById("water-text").innerText = `${water} / ${waterMax} L`;
+            document.getElementById("water-bar").style.width = `${Math.min(100, (water / waterMax) * 100)}%`;
+            document.getElementById("seeds-text").innerText = `${seeds} / ${seedsMax}`;
+            document.getElementById("seeds-bar").style.width = `${Math.min(100, (seeds / seedsMax) * 100)}%`;
+            document.getElementById("energy-text").innerText = `${energy} / ${energyMax} Wh`;
+            document.getElementById("energy-bar").style.width = `${Math.min(100, (energy / energyMax) * 100)}%`;
+            document.getElementById("hope-text").innerText = `${hope} / ${hopeMax}`;
+            document.getElementById("hope-bar").style.width = `${Math.min(100, (hope / hopeMax) * 100)}%`;
+            document.getElementById("coins-text").innerText = `${coins} Coins`;
+
+            // Floating +/- coin feedback (skipped for the very first update and the reset to 0)
+            if (lastCoins !== null && coins !== lastCoins && lastCoins !== 0 && coins !== 0) {
+                floatCoins(coins - lastCoins);
+            }
+            lastCoins = coins;
+        }
+
+        // addPlantsToDropdown(plants: list of [name, emoji, cost])
+        function addPlantsToDropdown(plants) {
+            const select = document.getElementById("crop-selector");
+            select.innerHTML = "";
+            if (!plants) return;
+            plants.forEach(([name, emoji, cost]) => {
+                cropEmojis[name] = emoji;
+                const option = document.createElement("option");
+                option.value = name;
+                option.textContent = `${emoji} ${name} (${cost}c)`;
+                select.appendChild(option);
+            });
+            updateGhosts();
+            renderGarden(true);
+        }
+
+        // pushAction(action: str)
+        // Appends a display label to the Farm Journal panel (no JS undo logic).
+        function pushAction(action) {
+            displayActionHistory.push(action);
+            if (displayActionHistory.length > 8) displayActionHistory.shift();
+            renderActionStack();
+        }
+
+        function renderActionStack() {
+            const container = document.getElementById("action-stack");
+            container.innerHTML = "";
+            if (displayActionHistory.length === 0) {
+                container.innerHTML = `<div class="empty-note">No chores yet. Plant something! 🌱</div>`;
+                return;
+            }
+            [...displayActionHistory].reverse().forEach(act => {
+                const div = document.createElement("div");
+                div.className = "note";
+                div.textContent = `✏️ ${act}`;
+                container.appendChild(div);
+            });
+        }
+
+        // UI-only: removes the last displayed label. Your Python owns the real stack.
+        function triggerUndo() {
+            if (displayActionHistory.length > 0) {
+                const undone = displayActionHistory.pop();
+                renderActionStack();
+                showToast(`Undid: ${undone}`);
+            } else {
+                showToast("Stack is empty.");
+            }
+        }
+
+        // showToast(msg: str) — also callable from Python
+        function showToast(msg) {
+            const toast = document.createElement("div");
+            toast.className = "toast";
+            toast.textContent = msg;
+            document.getElementById("toasts").appendChild(toast);
+            setTimeout(() => toast.remove(), 2700);
+        }
+
+        async function runPythonCode() {
+            const consoleEl = document.getElementById("output-console");
+            consoleEl.innerHTML = `<span class="con-warn">Running...</span><br>`;
+            try {
+                await initPyodide();
+                const code = document.getElementById("code-editor").value.trim();
+                await pyodideInstance.runPythonAsync(code);
+                flashPanels(document.getElementById("topic-selector").value, true);
+            } catch (err) {
+                consoleEl.innerHTML += `<span class="con-err">Error: ${err.message}</span>`;
+            }
+        }
+
+        // Where each topic's output appears once it runs (display only)
+        const TOPIC_TARGETS = {
+            1:  { panels: ["stack-panel"], text: "Farm Journal (right column)" },
+            2:  { panels: ["climate-queue-panel"], text: "Weather Forecast (right column), the Day counter and the whole farm scene" },
+            3:  { panels: ["view-game", "resources-section"], text: "the Farm Field (center) and Farm Storage (left column)" },
+            4:  { panels: ["zone-panel"], text: "Farm Zones (left column)" },
+            5:  { panels: ["bst-panel"], text: "Plant Registry (left column)" },
+            6:  { panels: [], text: "the console below (write your code here)" },
+            7:  { panels: [], text: "the console below (write your code here)" },
+            8:  { panels: [], text: "the console below (write your code here)" },
+            9:  { panels: [], text: "the console below (write your code here)" },
+            10: { panels: [], text: "the console below (write your code here)" },
+            11: { panels: [], text: "the console below (write your code here)" },
+            12: { panels: ["resources-section"], text: "Farm Storage (left column) and the Seed Pouch" }
+        };
+
+        function flashPanels(key, scroll) {
+            const t = TOPIC_TARGETS[key];
+            if (!t) return;
+            t.panels.forEach(id => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                el.classList.remove("flash");
+                void el.offsetWidth;
+                el.classList.add("flash");
+                setTimeout(() => el.classList.remove("flash"), 1600);
+            });
+            if (scroll && t.panels.length) {
+                const first = document.getElementById(t.panels[0]);
+                if (first) first.scrollIntoView({ behavior: "smooth", block: "nearest" });
+            }
+        }
+
+        function loadTopic(fromUser) {
+            const key = document.getElementById("topic-selector").value;
+            document.getElementById("code-editor").value = topicTemplates[key].code;
+            document.getElementById("topic-hint").textContent = "📍 Output appears in: " + TOPIC_TARGETS[key].text;
+            if (fromUser === true) flashPanels(key, false);
+        }
+
+        window.onload = () => {
+            document.getElementById("version-badge").textContent = "v" + APP_VERSION;
+            buildGrid();
+            document.getElementById("crop-selector").addEventListener("change", updateGhosts);
+            renderGarden(true);
+            renderActionStack();
+            updateClimateQueue([]);
+            // Resources stay at 0 until your Python calls updateResources(...)
+            updateResources(0, 0, 0, 0, 0);
+
+            const select = document.getElementById("topic-selector");
+            const TOPIC_GROUPS = [
+                ["📚 Stacks & Queues", [1, 2]],
+                ["🌱 Field & Resources", [3, 12]],
+                ["🌳 Trees", [4, 5]],
+                ["🔑 Hashing & Graphs", [6, 7]],
+                ["🧮 Sorting & Searching", [8, 9]],
+                ["🧭 Strategy & DP", [10, 11]]
+            ];
+            TOPIC_GROUPS.forEach(([label, keys]) => {
+                const group = document.createElement("optgroup");
+                group.label = label;
+                keys.forEach(k => {
+                    const opt = document.createElement("option");
+                    opt.value = k;
+                    opt.textContent = `Topic ${k} · ${topicTemplates[k].title}`;
+                    group.appendChild(opt);
+                });
+                select.appendChild(group);
+            });
+            loadTopic();
+            // Pre-load Pyodide in the background so the first Run is faster
+            initPyodide().catch(() => {});
+        };
+    </script>
+</body>
+</html>
