@@ -1,6 +1,29 @@
 <!--
 # Changelog
 
+## [0.20.2] - 2026-11-04
+### Changed
+- Made dashboard panels, cards and controls more translucent so the farm background shows through, while darkening text colors and retaining subtle blur for readability
+
+## [0.20.1] - 2026-11-04
+### Fixed
+- Widened the dashboard and stacked resource labels over their values so resource amounts stay inside their cards at desktop and mobile widths
+
+## [0.20.0] - 2026-11-04
+### Added
+- Added an original, looping farm melody and synthesized button-press sounds with volume control; audio is generated locally without external media downloads
+### Changed
+- Replaced the YouTube music player with locally generated audio so playback does not wait for a remote player to load
+
+## [0.19.0] - 2026-11-04
+### Added
+- Added the initial YouTube-backed background music player with play/pause, volume control and a player dock; this was later replaced by local audio in 0.20.0
+
+## [0.18.0] - 2026-11-04
+### Added
+- Barn Storage, Packing Shed and Seed Shop now open from dedicated buttons as centered animated overlays instead of appearing below the field
+- Added close buttons, backdrop dismissal and Escape-key support for the overlays
+
 ## [0.17.0] - 2026-11-04
 ### Added
 - Topic 8 (Sorting Algorithms) Python code: Bubble, Insertion, Selection, Quick and Merge Sort. Each one runs on a Tracker that counts comparisons and moves and records every step
@@ -180,10 +203,10 @@
         @import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap');
 
         :root {
-            --ink: #1d3a2c;
-            --ink-soft: #4f6b5a;
-            --glass: rgba(255, 252, 240, .74);
-            --glass-strong: rgba(255, 252, 240, .9);
+            --ink: #14281e;
+            --ink-soft: #294b39;
+            --glass: rgba(255, 252, 240, .56);
+            --glass-strong: rgba(255, 252, 240, .78);
             --leaf: #3cb371;
             --leaf-d: #1b8a4b;
             --sun: #ffb62e;
@@ -363,7 +386,7 @@
         /* ============================================================
            PAGE LAYOUT (landscape)
            ============================================================ */
-        #app { position: relative; z-index: 1; min-height: 100vh; padding: 12px 16px 60px; max-width: 1680px; margin: 0 auto; }
+        #app { position: relative; z-index: 1; min-height: 100vh; padding: 12px 16px 60px; max-width: 1900px; margin: 0 auto; }
 
         /* ---------- HUD ---------- */
         .hud {
@@ -395,12 +418,13 @@
         .clock-fill { height: 100%; width: 0%; border-radius: 999px; background: linear-gradient(90deg, #ffd86b, #ff9d2e 55%, #a05cff); transition: width .25s linear; }
         .clock-text { font-size: 11px; font-weight: 700; color: var(--ink-soft); margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-        .hud-res { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; border-radius: 16px; }
-        .rchip { display: flex; align-items: center; gap: 8px; padding: 6px 9px; border-radius: 16px; background: rgba(255,255,255,.6); border: 2px solid rgba(255,255,255,.9); box-shadow: 0 3px 0 rgba(30, 80, 50, .12); min-width: 0; }
+        .hud-res { display: grid; grid-template-columns: repeat(5, minmax(125px, 1fr)); gap: 8px; border-radius: 16px; }
+        .rchip { display: flex; align-items: center; gap: 7px; padding: 7px 9px; border-radius: 16px; background: rgba(255,255,255,.6); border: 2px solid rgba(255,255,255,.9); box-shadow: 0 3px 0 rgba(30, 80, 50, .12); min-width: 0; }
         .rico { font-size: 22px; display: inline-block; animation: bob 2.4s ease-in-out infinite; }
         .rbody { flex: 1; min-width: 0; }
-        .rtop { display: flex; justify-content: space-between; gap: 4px; font-size: 10px; font-weight: 800; color: var(--ink-soft); white-space: nowrap; }
-        .rtop span:last-child, #coins-text { color: var(--ink); }
+        .rtop { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; font-size: 10px; line-height: 1.15; font-weight: 800; color: var(--ink-soft); }
+        .rtop span:last-child { color: var(--ink); white-space: nowrap; font-size: 10px; }
+        #coins-text { color: var(--ink); }
         .rchip .bar { margin-top: 3px; }
         .rchip.coin { background: linear-gradient(180deg, #ffeaa0, #ffc93f); border-color: #fff3c2; }
         .rchip.coin .rname { font-size: 10px; font-weight: 800; color: #8a5a00; }
@@ -422,6 +446,24 @@
 
         .hud-ctl { display: flex; align-items: center; gap: 8px; }
         .hud-ctl select { padding: 7px 8px; font-size: 12px; }
+        #music-btn.is-playing { background: linear-gradient(180deg, #ffcf65, #e59a18); box-shadow: 0 4px 0 #a96a08, 0 8px 14px rgba(160, 100, 10, .25); }
+        .music-dock {
+            position: fixed; right: 16px; bottom: 16px; z-index: 1200; width: 290px; padding: 14px;
+            border: 3px solid rgba(255,255,255,.9); border-radius: 24px;
+            background: linear-gradient(155deg, rgba(255, 250, 220, .98), rgba(212, 239, 191, .97));
+            box-shadow: 0 12px 35px rgba(10, 40, 25, .38), inset 0 1px 0 #fff;
+        }
+        .music-dock-top { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+        .music-dock-title { flex: 1; min-width: 0; font-size: 13px; font-weight: 800; }
+        #music-status { margin: 0 0 8px; font-size: 11px; font-weight: 700; color: var(--ink-soft); }
+        .music-notes { display: flex; align-items: end; justify-content: center; gap: 7px; height: 72px; padding: 10px; margin: 8px 0; border-radius: 16px; background: linear-gradient(180deg, #9ed486, #4c9a58); }
+        .music-notes span { width: 12px; height: 22px; border-radius: 999px; background: linear-gradient(180deg, #fff1a8, #f8a93a); box-shadow: 0 2px 3px rgba(40,70,30,.25); }
+        #music-dock.is-playing .music-notes span { animation: music-bounce .65s ease-in-out infinite alternate; }
+        #music-dock.is-playing .music-notes span:nth-child(2n) { animation-delay: -.3s; }
+        #music-dock.is-playing .music-notes span:nth-child(3n) { animation-delay: -.48s; }
+        @keyframes music-bounce { from { height: 14px; } to { height: 52px; } }
+        .music-volume { display: flex; align-items: center; gap: 8px; margin-top: 8px; font-size: 11px; font-weight: 800; }
+        .music-volume input { flex: 1; min-width: 0; accent-color: var(--leaf-d); }
         .score { display: flex; align-items: center; gap: 4px; padding: 6px 10px; border-radius: 999px; background: rgba(255,255,255,.65); font-size: 12px; font-weight: 800; white-space: nowrap; }
         .score b { font-family: 'Baloo 2'; font-size: 16px; color: var(--leaf-d); }
 
@@ -431,12 +473,13 @@
         .lab { grid-column: 1 / -1; }
         @media (max-width: 1180px) {
             .hud { grid-template-columns: 1fr 1fr; position: static; }
-            .hud-res { grid-column: 1 / -1; grid-template-columns: repeat(3, 1fr); }
+            .hud-res { grid-column: 1 / -1; grid-template-columns: repeat(5, minmax(0, 1fr)); }
             main.stage { grid-template-columns: 1fr; }
             .col-center { order: -1; }
             .lab { grid-column: auto; }
         }
-        @media (max-width: 640px) { .hud { grid-template-columns: 1fr; } .hud-res { grid-template-columns: repeat(2, 1fr); } .hud-ctl { flex-wrap: wrap; } }
+        @media (max-width: 640px) { .hud { grid-template-columns: 1fr; } .hud-res { grid-template-columns: repeat(2, minmax(0, 1fr)); } .hud-ctl { flex-wrap: wrap; } }
+        @media (max-width: 420px) { .music-dock { right: 10px; bottom: 10px; width: min(272px, calc(100vw - 20px)); } }
 
         .panel {
             position: relative; padding: 14px 16px 16px; border-radius: 24px;
@@ -715,6 +758,27 @@
         .head-tools { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
         .btn.shop-on { background: linear-gradient(180deg, #ff9aa8, #e0405f); box-shadow: 0 4px 0 #a02640, 0 8px 14px rgba(160, 40, 70, .28); }
         .panel-title .btn { padding: 6px 12px; }
+        #panel-backdrop {
+            position: fixed; inset: 0; z-index: 1000; background: rgba(15, 35, 25, .62);
+            backdrop-filter: blur(5px); animation: backdrop-in .22s ease both;
+        }
+        #panel-backdrop.is-closing { animation: backdrop-out .2s ease both; }
+        .panel.modal-panel {
+            position: fixed; z-index: 1001; left: 50%; top: 50%; width: min(940px, calc(100vw - 32px));
+            max-height: calc(100vh - 32px); overflow: auto; margin: 0; transform: translate(-50%, -50%);
+            box-shadow: 0 24px 70px rgba(0, 0, 0, .38); animation: modal-in .25s cubic-bezier(.2, .9, .3, 1.15) both;
+        }
+        .panel.modal-panel.is-closing { animation: modal-out .2s ease both; }
+        .modal-close { margin-left: 0; flex: none; }
+        @keyframes backdrop-in { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes backdrop-out { from { opacity: 1; } to { opacity: 0; } }
+        @keyframes modal-in { from { opacity: 0; transform: translate(-50%, -46%) scale(.94); } to { opacity: 1; transform: translate(-50%, -50%) scale(1); } }
+        @keyframes modal-out { from { opacity: 1; transform: translate(-50%, -50%) scale(1); } to { opacity: 0; transform: translate(-50%, -46%) scale(.94); } }
+        @media (max-width: 600px) {
+            .panel.modal-panel { width: calc(100vw - 20px); max-height: calc(100vh - 20px); padding: 14px; }
+            .panel.modal-panel .panel-title { gap: 6px; font-size: 15px; }
+            .panel.modal-panel .panel-title .chip { font-size: 8px; letter-spacing: .5px; }
+        }
 
         /* ---------- Barn storage (hash table, Topic 6) ---------- */
         #hash-stats { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
@@ -790,6 +854,54 @@
         @keyframes toastin { from { transform: translateX(120%) rotate(8deg); opacity: 0; } to { transform: none; opacity: 1; } }
         @keyframes toastout { to { transform: translateX(120%); opacity: 0; } }
         footer { text-align: center; font-size: 11px; font-weight: 800; color: #1d5a35; margin-top: 18px; }
+
+        /* ---------- Translucent farm UI with high-contrast text ---------- */
+        .hud {
+            background: linear-gradient(180deg, rgba(255, 252, 240, .76), rgba(255, 246, 215, .62));
+            border-color: rgba(255,255,255,.72);
+        }
+        .panel {
+            background: rgba(255, 252, 240, .58);
+            backdrop-filter: blur(8px) saturate(1.35);
+            border-color: rgba(255,255,255,.72);
+        }
+        .music-dock {
+            background: linear-gradient(155deg, rgba(255, 250, 220, .88), rgba(212, 239, 191, .82));
+            backdrop-filter: blur(10px) saturate(1.35);
+        }
+        .rchip, .score, .pouch, .growth-guide span, .legend div, .hb-row,
+        .empty-state, .sort-info, .topic-hint, .next-arrival, .zs, .chip {
+            background-color: rgba(255, 255, 255, .56);
+            backdrop-filter: blur(5px);
+        }
+        .zone-card, .shop-card, .event, .weather-today, .note {
+            background: linear-gradient(160deg, rgba(255, 255, 255, .76), rgba(243, 236, 210, .58));
+            backdrop-filter: blur(6px) saturate(1.2);
+        }
+        .zone-card.root {
+            background: linear-gradient(160deg, rgba(232, 250, 219, .78), rgba(196, 235, 166, .58));
+        }
+        .weather-today.wt-sunny { background: linear-gradient(180deg, rgba(255, 243, 176, .78), rgba(255, 217, 90, .58)); }
+        .weather-today.wt-rain { background: linear-gradient(180deg, rgba(212, 230, 246, .78), rgba(143, 180, 214, .58)); }
+        .weather-today.wt-heat { background: linear-gradient(180deg, rgba(255, 220, 168, .78), rgba(255, 154, 85, .58)); }
+        .weather-today.wt-winter { background: linear-gradient(180deg, rgba(244, 250, 255, .8), rgba(188, 217, 240, .62)); }
+        .event:first-child { background: linear-gradient(180deg, rgba(255, 240, 194, .8), rgba(255, 217, 138, .62)); }
+        .sort-table tr:nth-child(even) td { background: rgba(255, 255, 255, .42); }
+        .btn.ghost { background: linear-gradient(180deg, rgba(255, 255, 255, .9), rgba(238, 243, 234, .82)); }
+        select, input[type=number] { background: rgba(255, 253, 243, .9); }
+        .panel-title, .hint, .sub-label, .view-head p, .clock-text, .music-dock-title,
+        #music-status, .shop-stats, .zone-name, .zone-stats, .last-order, #zone-levels,
+        #bst-stats, #bst-inorder, .wt-label, .wt-note, .event .ev-sub, .legend,
+        .hash-load-text, .sort-table th, #sort-note {
+            color: var(--ink);
+            text-shadow: 0 1px 2px rgba(255, 255, 255, .58);
+        }
+        .panel-title { color: #145c35; }
+        .chip, .zs, .empty-state, .empty-note, .sort-info, .topic-hint,
+        .shop-owned, .shop-stats, .wt-label, .wt-note, .event .ev-sub,
+        .hash-load-text, .sort-table th, .last-order, #zone-levels, #bst-stats, #bst-inorder {
+            color: #203d2d;
+        }
 
         @media (prefers-reduced-motion: reduce) {
             *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
@@ -899,6 +1011,7 @@
             </div>
 
             <div class="hud-ctl">
+                <button id="music-btn" class="btn ghost" onclick="toggleMusic()" title="Turn farm background music on or off"><span class="bico">🎵</span> Music Ready</button>
                 <button id="pause-btn" class="btn ghost" onclick="toggleClock()"><span class="bico">⏸️</span> Pause</button>
                 <select id="speed-select" onchange="setDayLength(this.value)" title="Day length">
                     <option value="45">🐢 Slow</option>
@@ -940,6 +1053,8 @@
                             <p>Click soil to plant · click a plant to water it · click a ripe plant to harvest it. The farmer does the work!</p>
                         </div>
                         <div class="head-tools">
+                            <button id="barn-btn" class="btn" onclick="togglePanel('hash-panel')"><span class="bico">🧺</span> Barn Storage</button>
+                            <button id="packing-btn" class="btn water" onclick="togglePanel('sort-panel')"><span class="bico">📦</span> Packing Shed</button>
                             <button id="shop-btn" class="btn harvest" onclick="toggleShop()"><span class="bico">🏪</span> Shop</button>
                             <div class="pouch"><span>🎒 Seed Pouch</span><select id="crop-selector"></select></div>
                         </div>
@@ -964,8 +1079,8 @@
                     <div class="growth-guide"><span>🌰 Seed</span><span>→ 🌱 Sprout</span><span>→ 🌿 Leafy</span><span>→ 🌽 Ripe & glowing</span><span>💧 = watered today</span></div>
                 </section>
 
-                <section id="shop-panel" class="panel hidden">
-                    <h2 class="panel-title"><span class="ico">🏪</span> Seed Shop <span class="chip">Topic 12</span> <button class="btn ghost" onclick="toggleShop()"><span class="bico">✖</span> Close</button></h2>
+                <section id="shop-panel" class="panel hidden" role="dialog" aria-modal="true" aria-labelledby="shop-title" aria-hidden="true">
+                    <h2 id="shop-title" class="panel-title"><span class="ico">🏪</span> Seed Shop <span class="chip">Topic 12</span> <button class="btn ghost modal-close" onclick="closePanel()"><span class="bico">✖</span> Close</button></h2>
                     <div id="shop-empty" class="empty-state">🏪 Run <b>Topic 12</b> (or press <b>Run All</b>) to stock the shop.</div>
                     <div id="shop-body" class="hidden">
                         <p id="shop-summary" class="hint"></p>
@@ -976,8 +1091,8 @@
                     </div>
                 </section>
 
-                <section id="hash-panel" class="panel">
-                    <h2 class="panel-title"><span class="ico">🧺</span> Barn Storage (Hash Table) <span class="chip">Topic 6</span></h2>
+                <section id="hash-panel" class="panel hidden" role="dialog" aria-modal="true" aria-labelledby="hash-title" aria-hidden="true">
+                    <h2 id="hash-title" class="panel-title"><span class="ico">🧺</span> Barn Storage (Hash Table) <span class="chip">Topic 6</span> <button class="btn ghost modal-close" onclick="closePanel()"><span class="bico">✖</span> Close</button></h2>
                     <div id="hash-empty" class="empty-state">🧺 Run <b>Topic 6</b> (or press <b>Run All</b>) to open the barn here.</div>
                     <div id="hash-body" class="hidden">
                         <p class="hint">Every harvested crop is stored by hashing its name to a bucket. Two crops in one bucket are a collision (they chain together). Past a 0.75 load factor the table rehashes into more buckets.</p>
@@ -998,8 +1113,8 @@
                     </div>
                 </section>
 
-                <section id="sort-panel" class="panel">
-                    <h2 class="panel-title"><span class="ico">📦</span> Packing Shed (Sorting) <span class="chip">Topic 8</span></h2>
+                <section id="sort-panel" class="panel hidden" role="dialog" aria-modal="true" aria-labelledby="sort-title" aria-hidden="true">
+                    <h2 id="sort-title" class="panel-title"><span class="ico">📦</span> Packing Shed (Sorting) <span class="chip">Topic 8</span> <button class="btn ghost modal-close" onclick="closePanel()"><span class="bico">✖</span> Close</button></h2>
                     <div id="sort-empty" class="empty-state">📦 Run <b>Topic 8</b> (or press <b>Run All</b>) to open the packing shed here.</div>
                     <div id="sort-body" class="hidden">
                         <p class="hint">Sort the crop crates and watch each algorithm work. Choose "Water per watering" as the sort key to see how sorts treat equal values (Strawberry and Pepper tie).</p>
@@ -1031,6 +1146,8 @@
                     </div>
                 </section>
             </section>
+
+            <div id="panel-backdrop" class="hidden" aria-hidden="true" onclick="closePanel()"></div>
 
             <!-- RIGHT: weather (Topic 2) + registry (Topic 5) -->
             <aside class="col col-right">
@@ -1096,6 +1213,19 @@
         <footer>🌻 Powered by Python running right in your browser 🌻</footer>
     </div>
 
+    <aside id="music-dock" class="music-dock hidden" aria-label="Background music controls">
+        <div class="music-dock-top">
+            <div class="music-dock-title">🎵 Harvest Hollow melody</div>
+            <button class="btn ghost" onclick="closeMusicDock()" aria-label="Close music player"><span class="bico">✖</span></button>
+        </div>
+        <p id="music-status" role="status">Original farm music starts with your first button press.</p>
+        <div class="music-notes" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+        <label class="music-volume" for="music-volume">
+            <span>Volume</span>
+            <input id="music-volume" type="range" min="0" max="100" value="25" oninput="setMusicVolume(this.value)">
+        </label>
+    </aside>
+
     <script>
         // =====================================================================
         // SEMANTIC VERSIONING (SemVer 2.0.0)
@@ -1105,12 +1235,165 @@
         // PATCH: bug fix or small tweak with no new feature
         // Use 0.x.y while in development; move to 1.0.0 once all 11 topics are complete.
         // =====================================================================
-        const APP_VERSION = "0.17.0";
+        const APP_VERSION = "0.20.2";
 
         // The farm grid: 8 columns x 6 rows = 48 plots (Python uses the same ROWS = 6, COLS = 8)
         const GRID = { left: 200, top: 214, cols: 8, rows: 6, tile: 68, gap: 8 };
         const TILE_COUNT = GRID.cols * GRID.rows;
         const WORLD_W = 1000, WORLD_H = 780;
+
+        let audioContext = null;
+        let musicGain = null;
+        let effectsGain = null;
+        let musicTimer = null;
+        let musicStep = 0;
+        let musicNextNoteTime = 0;
+        let musicEnabled = true;
+        let musicStarted = false;
+        const MUSIC_TEMPO = 96;
+        const MUSIC_BEAT = 60 / MUSIC_TEMPO / 2;
+        const FARM_MELODY = [
+            392, 494, 587, 494, 440, 392, 330, 392,
+            440, 494, 659, 587, 494, 440, 392, 330,
+            392, 440, 494, 392, 330, 294, 330, 392,
+            440, 392, 330, 294, 330, 392, 440, 392
+        ];
+        const FARM_BASS = [196, 0, 0, 0, 147, 0, 0, 0, 165, 0, 0, 0, 131, 0, 0, 0];
+
+        function ensureAudio() {
+            if (audioContext) return audioContext.resume();
+            const AudioContextType = window.AudioContext || window.webkitAudioContext;
+            if (!AudioContextType) {
+                document.getElementById("music-status").textContent = "This browser does not support generated audio.";
+                return Promise.resolve();
+            }
+            audioContext = new AudioContextType();
+            musicGain = audioContext.createGain();
+            effectsGain = audioContext.createGain();
+            musicGain.gain.value = Number(document.getElementById("music-volume").value) / 100 * 0.18;
+            effectsGain.gain.value = 0.32;
+            musicGain.connect(audioContext.destination);
+            effectsGain.connect(audioContext.destination);
+            return audioContext.resume();
+        }
+
+        function playTone(frequency, start, duration, volume, type, destination) {
+            if (!audioContext || !frequency) return;
+            const oscillator = audioContext.createOscillator();
+            const envelope = audioContext.createGain();
+            oscillator.type = type;
+            oscillator.frequency.setValueAtTime(frequency, start);
+            envelope.gain.setValueAtTime(0.0001, start);
+            envelope.gain.exponentialRampToValueAtTime(volume, start + 0.018);
+            envelope.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+            oscillator.connect(envelope);
+            envelope.connect(destination);
+            oscillator.start(start);
+            oscillator.stop(start + duration + 0.03);
+        }
+
+        function playButtonSound(button) {
+            if (!audioContext || !button) return;
+            const now = audioContext.currentTime;
+            const base = button.classList.contains("harvest") ? 659 :
+                button.classList.contains("water") ? 587 :
+                button.classList.contains("go") ? 784 : 523;
+            playTone(base, now, 0.11, 0.34, "sine", effectsGain);
+            playTone(base * 1.5, now + 0.025, 0.16, 0.12, "triangle", effectsGain);
+        }
+
+        function scheduleMusicStep() {
+            const time = musicNextNoteTime;
+            const melody = FARM_MELODY[musicStep];
+            playTone(melody, time, MUSIC_BEAT * 0.82, 0.32, "triangle", musicGain);
+            if (musicStep % 2 === 0) {
+                const bass = FARM_BASS[Math.floor(musicStep / 2) % FARM_BASS.length];
+                playTone(bass, time, MUSIC_BEAT * 1.7, 0.38, "sine", musicGain);
+            }
+            if (musicStep % 4 === 2) {
+                playTone(melody * 1.25, time + MUSIC_BEAT * 0.15, MUSIC_BEAT * 0.7, 0.1, "sine", musicGain);
+            }
+            musicNextNoteTime += MUSIC_BEAT;
+            musicStep = (musicStep + 1) % FARM_MELODY.length;
+        }
+
+        function scheduleMusic() {
+            if (!musicEnabled || !audioContext) return;
+            while (musicNextNoteTime < audioContext.currentTime + 0.12) scheduleMusicStep();
+        }
+
+        function startMusic() {
+            if (!audioContext || musicTimer) return;
+            musicStep = 0;
+            musicNextNoteTime = audioContext.currentTime + 0.04;
+            scheduleMusic();
+            musicTimer = setInterval(scheduleMusic, 40);
+        }
+
+        function stopMusic() {
+            if (musicTimer) clearInterval(musicTimer);
+            musicTimer = null;
+        }
+
+        function updateMusicUi() {
+            const playing = musicEnabled && musicStarted;
+            const button = document.getElementById("music-btn");
+            button.classList.toggle("is-playing", playing);
+            button.innerHTML = playing
+                ? '<span class="bico">🎵</span> Music On'
+                : '<span class="bico">🔇</span> Music Off';
+            const dock = document.getElementById("music-dock");
+            dock.classList.toggle("is-playing", playing);
+            document.getElementById("music-status").textContent = playing
+                ? "Playing an original, looping farm melody."
+                : "Music is off. Press any farm button to start it.";
+        }
+
+        function startAudioFromGesture(button) {
+            if (!button || button.disabled) return;
+            ensureAudio().then(() => {
+                if (!audioContext) return;
+                playButtonSound(button);
+                if (button.id !== "music-btn" && !musicStarted) {
+                    musicStarted = true;
+                    musicEnabled = true;
+                    startMusic();
+                    document.getElementById("music-dock").classList.remove("hidden");
+                    updateMusicUi();
+                }
+            }).catch(error => {
+                document.getElementById("music-status").textContent = "Audio could not start: " + error.message;
+            });
+        }
+
+        function toggleMusic() {
+            ensureAudio().then(() => {
+                if (!audioContext) return;
+                if (!musicStarted) {
+                    musicStarted = true;
+                    musicEnabled = true;
+                    startMusic();
+                } else {
+                    musicEnabled = !musicEnabled;
+                    if (musicEnabled) startMusic();
+                    else stopMusic();
+                }
+                document.getElementById("music-dock").classList.remove("hidden");
+                updateMusicUi();
+            }).catch(error => {
+                document.getElementById("music-status").textContent = "Audio could not start: " + error.message;
+            });
+        }
+
+        function setMusicVolume(value) {
+            if (musicGain && audioContext) {
+                musicGain.gain.setTargetAtTime(Number(value) / 100 * 0.18, audioContext.currentTime, 0.04);
+            }
+        }
+
+        function closeMusicDock() {
+            document.getElementById("music-dock").classList.add("hidden");
+        }
 
         let pyodideInstance = null;
         let gardenPlants = {};
@@ -3910,18 +4193,103 @@ print("Resource Storage and Seed Shop ready! Buy seeds in the Seed Shop, then pl
         }
         // ---- end Seed Shop panel ----
 
+        let activePanelId = null;
+        let panelCloseTimer = null;
+        let bodyOverflowBeforePanel = null;
+
+        function setPanelButton(panelId, isOpen) {
+            const buttonId = panelId === "shop-panel" ? "shop-btn" :
+                panelId === "hash-panel" ? "barn-btn" : "packing-btn";
+            const button = document.getElementById(buttonId);
+            if (!button) return;
+            button.classList.toggle("shop-on", isOpen && panelId === "shop-panel");
+            if (panelId === "shop-panel") {
+                button.innerHTML = isOpen ? '<span class="bico">✖</span> Close Shop' : '<span class="bico">🏪</span> Shop';
+            }
+        }
+
+        function openPanel(panelId) {
+            const panel = document.getElementById(panelId);
+            const backdrop = document.getElementById("panel-backdrop");
+            if (!panel || !backdrop) return;
+            if (panelCloseTimer) {
+                clearTimeout(panelCloseTimer);
+                panelCloseTimer = null;
+            }
+            if (activePanelId && activePanelId !== panelId) closePanel(true);
+            if (!activePanelId) bodyOverflowBeforePanel = document.body.style.overflow;
+            activePanelId = panelId;
+            document.body.style.overflow = "hidden";
+            panel.classList.remove("hidden", "is-closing");
+            panel.classList.add("modal-panel");
+            panel.setAttribute("aria-hidden", "false");
+            backdrop.classList.remove("hidden", "is-closing");
+            backdrop.setAttribute("aria-hidden", "false");
+            setPanelButton(panelId, true);
+            const closeButton = panel.querySelector(".modal-close");
+            if (closeButton) closeButton.focus({ preventScroll: true });
+        }
+
+        function closePanel(immediate = false) {
+            const panelId = activePanelId;
+            if (!panelId) return;
+            const panel = document.getElementById(panelId);
+            const backdrop = document.getElementById("panel-backdrop");
+            activePanelId = null;
+            setPanelButton(panelId, false);
+            if (!panel || !backdrop) return;
+            panel.setAttribute("aria-hidden", "true");
+            backdrop.setAttribute("aria-hidden", "true");
+            if (panelCloseTimer) clearTimeout(panelCloseTimer);
+            if (immediate) {
+                panel.classList.add("hidden");
+                panel.classList.remove("modal-panel", "is-closing");
+                backdrop.classList.add("hidden");
+                backdrop.classList.remove("is-closing");
+                document.body.style.overflow = bodyOverflowBeforePanel || "";
+                bodyOverflowBeforePanel = null;
+                panelCloseTimer = null;
+                return;
+            }
+            panel.classList.add("is-closing");
+            backdrop.classList.add("is-closing");
+            panelCloseTimer = setTimeout(() => {
+                panel.classList.add("hidden");
+                panel.classList.remove("modal-panel", "is-closing");
+                backdrop.classList.add("hidden");
+                backdrop.classList.remove("is-closing");
+                document.body.style.overflow = bodyOverflowBeforePanel || "";
+                bodyOverflowBeforePanel = null;
+                panelCloseTimer = null;
+            }, 220);
+        }
+
+        function togglePanel(panelId) {
+            if (activePanelId === panelId) {
+                closePanel();
+                return;
+            }
+            openPanel(panelId);
+            if (panelId === "hash-panel" && (!pyodideInstance || !pyodideInstance.globals.has("on_hash_action"))) {
+                showToast("Run Topic 6 (or Run All) to stock Barn Storage.");
+            }
+            if (panelId === "sort-panel" && (!pyodideInstance || !pyodideInstance.globals.has("on_sort_action"))) {
+                showToast("Run Topic 8 (or Run All) to stock the Packing Shed.");
+            }
+        }
+
+        document.addEventListener("keydown", event => {
+            if (event.key === "Escape") closePanel();
+        });
+
         // Shop button: shows or hides the Seed Shop (display only)
         function toggleShop() {
-            const panel = document.getElementById("shop-panel");
-            const btn = document.getElementById("shop-btn");
-            const open = panel.classList.contains("hidden");
-            panel.classList.toggle("hidden", !open);
-            btn.classList.toggle("shop-on", open);
-            btn.innerHTML = open ? '<span class="bico">✖</span> Close Shop' : '<span class="bico">🏪</span> Shop';
-            if (open) {
-                panel.scrollIntoView({ behavior: "smooth", block: "nearest" });
-                if (!pyodideInstance || !pyodideInstance.globals.has("on_shop_buy")) showToast("The shop is empty: run Topic 12 (or Run All) to stock it.");
+            if (activePanelId === "shop-panel") {
+                closePanel();
+                return;
             }
+            openPanel("shop-panel");
+            if (!pyodideInstance || !pyodideInstance.globals.has("on_shop_buy")) showToast("The shop is empty: run Topic 12 (or Run All) to stock it.");
         }
 
         // ---- Barn Storage hash table panel (Topic 6) ----
@@ -4554,6 +4922,15 @@ print("Resource Storage and Seed Shop ready! Buy seeds in the Seed Shop, then pl
 
         window.onload = () => {
             document.getElementById("version-badge").textContent = "v" + APP_VERSION;
+            document.addEventListener("pointerdown", event => {
+                const button = event.target.closest("button");
+                if (button) startAudioFromGesture(button);
+            }, true);
+            document.addEventListener("click", event => {
+                if (event.detail !== 0) return;
+                const button = event.target.closest("button");
+                if (button) startAudioFromGesture(button);
+            });
             buildGrid();
             initYard();
             initAmbient();
